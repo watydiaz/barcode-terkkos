@@ -3,70 +3,88 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Lector de Códigos</title>
-  <script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
+  <title>Lector de Código de Barras - ZXing</title>
   <style>
     body {
       font-family: Arial, sans-serif;
       text-align: center;
+      background: #f4f4f4;
+      margin: 0;
       padding: 10px;
-      background: #f9f9f9;
     }
-    h1 {
-      font-size: 1.5rem;
-    }
-    #reader {
+    video {
       width: 100%;
-      max-width: 350px;
-      margin: auto;
+      max-width: 500px;
+      border: 2px solid #333;
+      border-radius: 8px;
     }
     #result {
-      margin-top: 20px;
-      font-size: 1.2rem;
+      margin-top: 15px;
       padding: 10px;
       background: #fff;
+      border: 1px solid #ccc;
       border-radius: 8px;
-      box-shadow: 0 0 5px rgba(0,0,0,0.2);
+      font-size: 1.2em;
+      font-weight: bold;
+    }
+    select {
+      margin: 10px;
+      padding: 8px;
+      font-size: 1em;
     }
   </style>
 </head>
 <body>
-  <h1>📷 Lector de Códigos</h1>
-  <div id="reader"></div>
+
+  <h2>📷 Escáner de Códigos de Barras</h2>
+
+  <select id="cameraSelect"></select>
+  <br>
+  <video id="video" autoplay></video>
   <div id="result">Esperando código...</div>
 
+  <!-- ZXing library -->
+  <script src="https://unpkg.com/@zxing/library@latest"></script>
   <script>
-    function onScanSuccess(decodedText, decodedResult) {
-      document.getElementById("result").innerText = "✅ Código detectado: " + decodedText;
-    }
+    const codeReader = new ZXing.BrowserMultiFormatReader();
+    const videoElement = document.getElementById('video');
+    const cameraSelect = document.getElementById('cameraSelect');
+    const resultDiv = document.getElementById('result');
 
-    function onScanFailure(error) {
-      console.warn(`Error: ${error}`);
-    }
+    // Listar cámaras disponibles
+    codeReader.listVideoInputDevices().then(videoInputDevices => {
+      videoInputDevices.forEach((device, index) => {
+        const option = document.createElement('option');
+        option.text = device.label || `Cámara ${index + 1}`;
+        option.value = device.deviceId;
+        cameraSelect.appendChild(option);
+      });
 
-    const html5QrCode = new Html5Qrcode("reader");
-    const config = {
-      fps: 15, // cuadros por segundo
-      qrbox: { width: 250, height: 250 },
-      aspectRatio: 1.0
-    };
-
-    Html5Qrcode.getCameras().then(cameras => {
-      if (cameras && cameras.length) {
-        let backCamera = cameras.find(cam => cam.label.toLowerCase().includes('back'));
-        let cameraId = backCamera ? backCamera.id : cameras[0].id;
-
-        html5QrCode.start(
-          cameraId,
-          {
-            fps: 15,
-            qrbox: { width: 250, height: 250 }
-          },
-          onScanSuccess,
-          onScanFailure
-        ).catch(err => console.error("No se pudo iniciar cámara:", err));
+      // Seleccionar la última cámara (normalmente trasera)
+      if (videoInputDevices.length > 1) {
+        cameraSelect.selectedIndex = videoInputDevices.length - 1;
       }
-    }).catch(err => console.error("Error obteniendo cámaras:", err));
+
+      startScan(cameraSelect.value);
+    });
+
+    // Iniciar el escaneo
+    function startScan(deviceId) {
+      codeReader.decodeFromVideoDevice(deviceId, videoElement, (result, err) => {
+        if (result) {
+          resultDiv.textContent = `✅ Código detectado: ${result.getText()}`;
+        }
+        if (err && !(err instanceof ZXing.NotFoundException)) {
+          console.error(err);
+        }
+      });
+    }
+
+    // Cambiar de cámara
+    cameraSelect.onchange = () => {
+      codeReader.reset();
+      startScan(cameraSelect.value);
+    };
   </script>
 </body>
 </html>
