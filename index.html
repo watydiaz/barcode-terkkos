@@ -94,14 +94,16 @@ function actualizarTabla() {
   totalGeneral.textContent = formatoMoneda(total);
 }
 
+
 function cambiarCantidad(code, delta){
   pedidos[code].cantidad += delta;
   if(pedidos[code].cantidad < 1) pedidos[code].cantidad = 1;
   actualizarTabla();
+}
+
 // Formato moneda COP
 function formatoMoneda(valor) {
   return valor.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
-}
 }
 
 function cambiarPrecio(code, nuevoPrecio){
@@ -118,6 +120,8 @@ mesaCheck.addEventListener('change', actualizarTabla);
 
 // Función para agregar producto por código escaneado
 function agregarProductoPorCodigo(code){
+  // Mostrar el código recibido para depuración
+  resultDiv.textContent = "Código recibido: '" + code + "'";
   if(PRODUCTOS[code]){
     if(pedidos[code]){
       pedidos[code].cantidad += 1;
@@ -125,7 +129,9 @@ function agregarProductoPorCodigo(code){
       pedidos[code] = { ...PRODUCTOS[code], cantidad:1, basePrecio:PRODUCTOS[code].precio };
     }
     actualizarTabla();
+    resultDiv.textContent = "✅ Producto agregado: " + PRODUCTOS[code].nombre + " (" + code + ")";
   } else {
+    resultDiv.textContent = "❌ Producto no encontrado para el código: '" + code + "'";
     console.warn("Producto no encontrado en base de datos: ", code);
   }
 }
