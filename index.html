@@ -8,6 +8,7 @@
   body { font-family: Arial; background:#f4f4f4; padding:10px; }
   h2 { text-align:center; }
   video { width:100%; max-width:400px; border:2px solid #333; border-radius:8px; }
+  select { margin:10px; padding:6px; font-size:1em; }
   table { width:100%; max-width:550px; margin:auto; border-collapse: collapse; }
   th, td { padding:8px; border:1px solid #ccc; text-align:center; }
   input[type=number]{ width:60px; }
@@ -19,6 +20,11 @@
 <body>
 
 <h2>📦 Escáner de Pedidos - Billar</h2>
+
+<!-- Selector de cámara -->
+<label>Seleccionar cámara:</label>
+<select id="cameraSelect"></select>
+<br>
 
 <video id="video" autoplay></video>
 <div id="result">Esperando código...</div>
@@ -52,15 +58,16 @@ const resultDiv = document.getElementById('result');
 const tabla = document.querySelector('#tablaPedidos tbody');
 const totalGeneral = document.getElementById('totalGeneral');
 const mesaCheck = document.getElementById('mesaCheck');
+const cameraSelect = document.getElementById('cameraSelect');
 
 let pedidos = {}; // key: código, value: {nombre, cantidad, precio, basePrecio}
 
-// Definir productos (por ahora solo Águila 330cc)
+// Definir productos
 const PRODUCTOS = {
   "900871231234567899260000000826": { nombre:"Cerveza Águila 330cc", precio:3300 }
 };
 
-// Actualiza la tabla y calcula subtotales
+// Actualizar tabla y totales
 function actualizarTabla() {
   tabla.innerHTML = "";
   let total = 0;
@@ -119,10 +126,31 @@ function agregarProducto(code){
   }
 }
 
-// Configuración de cámara
+// Listar cámaras y seleccionar
 codeReader.listVideoInputDevices().then(videoInputDevices => {
+  videoInputDevices.forEach((device, index)=>{
+    const option = document.createElement('option');
+    option.text = device.label || `Cámara ${index+1}`;
+    option.value = device.deviceId;
+    cameraSelect.appendChild(option);
+  });
+
+  // Seleccionar la cámara trasera por defecto si existe
   let backCamera = videoInputDevices.find(cam=>/back|rear|environment/i.test(cam.label)) || videoInputDevices[0];
-  codeReader.decodeFromVideoDevice(backCamera.deviceId, videoElement, (result, err)=>{
+  cameraSelect.value = backCamera.deviceId;
+
+  iniciarEscaneo(backCamera.deviceId);
+});
+
+// Cambiar de cámara
+cameraSelect.onchange = () => {
+  iniciarEscaneo(cameraSelect.value);
+}
+
+// Iniciar escaneo
+function iniciarEscaneo(deviceId){
+  codeReader.reset();
+  codeReader.decodeFromVideoDevice(deviceId, videoElement, (result, err)=>{
     if(result){
       const code = result.getText();
       resultDiv.textContent = "✅ Código detectado: " + code;
@@ -132,7 +160,7 @@ codeReader.listVideoInputDevices().then(videoInputDevices => {
       console.warn(err);
     }
   }, { constraints:{ facingMode:"environment", width:{ideal:1920}, height:{ideal:1080} } });
-});
+}
 </script>
 
 </body>
