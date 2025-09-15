@@ -3,20 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pedidos Billar</title>
+<title>Pedidos Billar - Completo</title>
 <style>
   body { font-family: Arial; background:#f4f4f4; padding:10px; }
   h2 { text-align:center; }
   video { width:100%; max-width:400px; border:2px solid #333; border-radius:8px; }
-  table { width:100%; max-width:400px; margin:auto; border-collapse: collapse; }
+  table { width:100%; max-width:550px; margin:auto; border-collapse: collapse; }
   th, td { padding:8px; border:1px solid #ccc; text-align:center; }
-  input[type=number]{ width:50px; }
+  input[type=number]{ width:60px; }
   #result { margin-top:10px; text-align:center; font-weight:bold; }
+  button { padding:2px 6px; margin:0 2px; }
+  label { font-weight:bold; }
 </style>
 </head>
 <body>
 
 <h2>📦 Escáner de Pedidos - Billar</h2>
+
 <video id="video" autoplay></video>
 <div id="result">Esperando código...</div>
 <br>
@@ -32,7 +35,7 @@
       <th>Producto</th>
       <th>Cantidad</th>
       <th>Precio Unitario</th>
-      <th>Total</th>
+      <th>Subtotal</th>
       <th>Acción</th>
     </tr>
   </thead>
@@ -50,20 +53,22 @@ const tabla = document.querySelector('#tablaPedidos tbody');
 const totalGeneral = document.getElementById('totalGeneral');
 const mesaCheck = document.getElementById('mesaCheck');
 
-let pedidos = {}; // key: código, value: objeto {nombre, cantidad, precio}
+let pedidos = {}; // key: código, value: {nombre, cantidad, precio, basePrecio}
 
+// Definir productos (por ahora solo Águila 330cc)
 const PRODUCTOS = {
   "900871231234567899260000000826": { nombre:"Cerveza Águila 330cc", precio:3300 }
 };
 
+// Actualiza la tabla y calcula subtotales
 function actualizarTabla() {
   tabla.innerHTML = "";
   let total = 0;
   for (const code in pedidos) {
     const p = pedidos[code];
-    const precioUnitario = p.precio + (mesaCheck.checked ? 500 : 0);
-    const totalProd = p.cantidad * precioUnitario;
-    total += totalProd;
+    const precioUnitario = mesaCheck.checked ? p.precio + 500 : p.precio;
+    const subtotal = p.cantidad * precioUnitario;
+    total += subtotal;
     tabla.innerHTML += `
       <tr>
         <td>${p.nombre}</td>
@@ -72,8 +77,10 @@ function actualizarTabla() {
           ${p.cantidad}
           <button onclick="cambiarCantidad('${code}',1)">+</button>
         </td>
-        <td>${precioUnitario}</td>
-        <td>${totalProd}</td>
+        <td>
+          <input type="number" min="0" value="${p.precio}" onchange="cambiarPrecio('${code}',this.value)">
+        </td>
+        <td>${subtotal}</td>
         <td><button onclick="eliminarProducto('${code}')">❌</button></td>
       </tr>
     `;
@@ -87,25 +94,32 @@ function cambiarCantidad(code, delta){
   actualizarTabla();
 }
 
+function cambiarPrecio(code, nuevoPrecio){
+  pedidos[code].precio = Number(nuevoPrecio);
+  actualizarTabla();
+}
+
 function eliminarProducto(code){
   delete pedidos[code];
   actualizarTabla();
 }
 
+// Checkbox mesa
 mesaCheck.addEventListener('change', actualizarTabla);
 
+// Agrega producto al escanear
 function agregarProducto(code){
   if(PRODUCTOS[code]){
     if(pedidos[code]){
       pedidos[code].cantidad += 1;
     } else {
-      pedidos[code] = { ...PRODUCTOS[code], cantidad:1 };
+      pedidos[code] = { ...PRODUCTOS[code], cantidad:1, basePrecio:PRODUCTOS[code].precio };
     }
     actualizarTabla();
   }
 }
 
-// Configuración de la cámara
+// Configuración de cámara
 codeReader.listVideoInputDevices().then(videoInputDevices => {
   let backCamera = videoInputDevices.find(cam=>/back|rear|environment/i.test(cam.label)) || videoInputDevices[0];
   codeReader.decodeFromVideoDevice(backCamera.deviceId, videoElement, (result, err)=>{
