@@ -1,21 +1,4 @@
-// Función para reproducir un pitido
-function beep() {
-  try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const o = ctx.createOscillator();
-    const g = ctx.createGain();
-    o.type = 'sine';
-    o.frequency.value = 880;
-    g.gain.value = 0.15;
-    o.connect(g);
-    g.connect(ctx.destination);
-    o.start();
-    setTimeout(() => {
-      o.stop();
-      ctx.close();
-    }, 120);
-  } catch (e) { /* ignorar errores de audio */ }
-}
+<!-- Eliminado código JS fuera de <script> -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -73,6 +56,24 @@ function beep() {
 
 <script src="https://unpkg.com/@zxing/library@latest"></script>
 <script>
+// Función para reproducir un pitido
+function beep() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = 'sine';
+    o.frequency.value = 880;
+    g.gain.value = 0.15;
+    o.connect(g);
+    g.connect(ctx.destination);
+    o.start();
+    setTimeout(() => {
+      o.stop();
+      ctx.close();
+    }, 120);
+  } catch (e) { /* ignorar errores de audio */ }
+}
 let codeReader = new ZXing.BrowserMultiFormatReader();
 const videoElement = document.getElementById('video');
 const resultDiv = document.getElementById('result');
