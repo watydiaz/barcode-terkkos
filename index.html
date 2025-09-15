@@ -4,22 +4,25 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Billar - Control Pedidos</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+  <script src="https://unpkg.com/@zxing/library@latest"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
-      padding: 10px;
       background: #f4f4f4;
+      padding: 10px;
       margin: 0;
     }
-    h2 { text-align: center; }
-    #scanner {
+    h2 {
+      text-align: center;
+    }
+    video {
       width: 100%;
-      height: 300px;
-      margin: 10px auto;
-      background: black;
+      max-width: 400px;
+      height: auto;
+      margin: auto;
+      display: block;
+      border: 2px solid #333;
       border-radius: 10px;
-      overflow: hidden;
     }
     .btn {
       width: 48%;
@@ -32,7 +35,9 @@
       cursor: pointer;
       font-size: 16px;
     }
-    .btn:hover { background: #0056b3; }
+    .btn:hover {
+      background: #0056b3;
+    }
     ul {
       list-style: none;
       padding: 0;
@@ -49,7 +54,7 @@
 <body>
   <h2>📌 Control de Pedidos</h2>
 
-  <div id="scanner"></div>
+  <video id="video"></video>
   <div style="text-align:center;">
     <button class="btn" onclick="startScanner()">📷 Iniciar Cámara</button>
     <button class="btn" onclick="stopScanner()">✋ Detener</button>
@@ -59,67 +64,65 @@
   <ul id="pedidos"></ul>
 
   <script>
-    // Producto de prueba
+    // Lista de productos registrados
     const PRODUCTOS = {
       "900871231234567899260000000826": "Cerveza Prueba"
     };
 
     let pedidos = [];
+    let codeReader = null;
 
     function renderPedidos() {
       const lista = document.getElementById("pedidos");
       lista.innerHTML = "";
       pedidos.forEach((p, i) => {
-        lista.innerHTML += `<li> ${i+1}. ${p} </li>`;
+        lista.innerHTML += `<li>${i+1}. ${p}</li>`;
       });
     }
 
-    function startScanner() {
-      Quagga.init({
-        inputStream: {
-          type: "LiveStream",
-          target: document.querySelector('#scanner'),
-          constraints: {
-            facingMode: "environment", // cámara trasera
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
+    async function startScanner() {
+      if (codeReader) {
+        alert("El escáner ya está en ejecución");
+        return;
+      }
+
+      codeReader = new ZXing.BrowserMultiFormatReader();
+
+      try {
+        const videoElement = document.getElementById('video');
+        const devices = await codeReader.listVideoInputDevices();
+
+        // Buscar cámara trasera
+        let backCamera = devices.find(device => /back|rear|environment/gi.test(device.label)) || devices[0];
+
+        await codeReader.decodeFromVideoDevice(backCamera.deviceId, videoElement, (result, err) => {
+          if (result) {
+            const code = result.text;
+            console.log("Detectado:", code);
+
+            if (PRODUCTOS[code]) {
+              pedidos.push(PRODUCTOS[code]);
+              renderPedidos();
+              alert("📦 Producto agregado: " + PRODUCTOS[code]);
+            } else {
+              alert("❌ Código no registrado: " + code);
+            }
           }
-        },
-        locator: {
-          patchSize: "medium",
-          halfSample: true
-        },
-        decoder: {
-          readers: ["ean_reader", "ean_8_reader", "code_128_reader"]
-        },
-        locate: true
-      }, function(err) {
-        if (err) {
-          console.error("Error al iniciar Quagga:", err);
-          alert("No se pudo acceder a la cámara. Verifica permisos.");
-          return;
-        }
-        Quagga.start();
-        console.log("✅ Escáner iniciado");
-      });
+        });
 
-      Quagga.onDetected(function(data) {
-        let code = data.codeResult.code;
-        console.log("Detectado:", code);
-
-        if (PRODUCTOS[code]) {
-          pedidos.push(PRODUCTOS[code]);
-          renderPedidos();
-          alert("📦 Producto agregado: " + PRODUCTOS[code]);
-        } else {
-          alert("❌ Código no registrado: " + code);
-        }
-      });
+        console.log("✅ Escáner iniciado con cámara:", backCamera.label);
+      } catch (err) {
+        console.error(err);
+        alert("No se pudo acceder a la cámara. Verifica permisos.");
+      }
     }
 
     function stopScanner() {
-      Quagga.stop();
-      console.log("⏹ Escáner detenido");
+      if (codeReader) {
+        codeReader.reset();
+        codeReader = null;
+        console.log("⏹ Escáner detenido");
+      }
     }
   </script>
 </body>
