@@ -3,127 +3,70 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Billar - Control Pedidos</title>
-  <script src="https://unpkg.com/@zxing/library@latest"></script>
+  <title>Lector de Códigos</title>
+  <script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #f4f4f4;
-      padding: 10px;
-      margin: 0;
-    }
-    h2 {
       text-align: center;
-    }
-    video {
-      width: 100%;
-      max-width: 400px;
-      height: auto;
-      margin: auto;
-      display: block;
-      border: 2px solid #333;
-      border-radius: 10px;
-    }
-    .btn {
-      width: 48%;
-      padding: 12px;
-      margin: 1%;
-      border: none;
-      border-radius: 8px;
-      background: #007bff;
-      color: white;
-      cursor: pointer;
-      font-size: 16px;
-    }
-    .btn:hover {
-      background: #0056b3;
-    }
-    ul {
-      list-style: none;
-      padding: 0;
-    }
-    li {
-      background: white;
-      margin: 5px 0;
       padding: 10px;
-      border-radius: 5px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+      background: #f9f9f9;
+    }
+    h1 {
+      font-size: 1.5rem;
+    }
+    #reader {
+      width: 100%;
+      max-width: 350px;
+      margin: auto;
+    }
+    #result {
+      margin-top: 20px;
+      font-size: 1.2rem;
+      padding: 10px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.2);
     }
   </style>
 </head>
 <body>
-  <h2>📌 Control de Pedidos</h2>
-
-  <video id="video"></video>
-  <div style="text-align:center;">
-    <button class="btn" onclick="startScanner()">📷 Iniciar Cámara</button>
-    <button class="btn" onclick="stopScanner()">✋ Detener</button>
-  </div>
-
-  <h3>Pedidos:</h3>
-  <ul id="pedidos"></ul>
+  <h1>📷 Lector de Códigos</h1>
+  <div id="reader"></div>
+  <div id="result">Esperando código...</div>
 
   <script>
-    // Lista de productos registrados
-    const PRODUCTOS = {
-      "900871231234567899260000000826": "Cerveza Prueba"
+    function onScanSuccess(decodedText, decodedResult) {
+      document.getElementById("result").innerText = "✅ Código detectado: " + decodedText;
+    }
+
+    function onScanFailure(error) {
+      console.warn(`Error: ${error}`);
+    }
+
+    const html5QrCode = new Html5Qrcode("reader");
+    const config = {
+      fps: 15, // cuadros por segundo
+      qrbox: { width: 250, height: 250 },
+      aspectRatio: 1.0
     };
 
-    let pedidos = [];
-    let codeReader = null;
+    Html5Qrcode.getCameras().then(cameras => {
+      if (cameras && cameras.length) {
+        let backCamera = cameras.find(cam => cam.label.toLowerCase().includes('back'));
+        let cameraId = backCamera ? backCamera.id : cameras[0].id;
 
-    function renderPedidos() {
-      const lista = document.getElementById("pedidos");
-      lista.innerHTML = "";
-      pedidos.forEach((p, i) => {
-        lista.innerHTML += `<li>${i+1}. ${p}</li>`;
-      });
-    }
-
-    async function startScanner() {
-      if (codeReader) {
-        alert("El escáner ya está en ejecución");
-        return;
+        html5QrCode.start(
+          cameraId,
+          {
+            fps: 15,
+            qrbox: { width: 250, height: 250 }
+          },
+          onScanSuccess,
+          onScanFailure
+        ).catch(err => console.error("No se pudo iniciar cámara:", err));
       }
-
-      codeReader = new ZXing.BrowserMultiFormatReader();
-
-      try {
-        const videoElement = document.getElementById('video');
-        const devices = await codeReader.listVideoInputDevices();
-
-        // Buscar cámara trasera
-        let backCamera = devices.find(device => /back|rear|environment/gi.test(device.label)) || devices[0];
-
-        await codeReader.decodeFromVideoDevice(backCamera.deviceId, videoElement, (result, err) => {
-          if (result) {
-            const code = result.text;
-            console.log("Detectado:", code);
-
-            if (PRODUCTOS[code]) {
-              pedidos.push(PRODUCTOS[code]);
-              renderPedidos();
-              alert("📦 Producto agregado: " + PRODUCTOS[code]);
-            } else {
-              alert("❌ Código no registrado: " + code);
-            }
-          }
-        });
-
-        console.log("✅ Escáner iniciado con cámara:", backCamera.label);
-      } catch (err) {
-        console.error(err);
-        alert("No se pudo acceder a la cámara. Verifica permisos.");
-      }
-    }
-
-    function stopScanner() {
-      if (codeReader) {
-        codeReader.reset();
-        codeReader = null;
-        console.log("⏹ Escáner detenido");
-      }
-    }
+    }).catch(err => console.error("Error obteniendo cámaras:", err));
   </script>
 </body>
 </html>
