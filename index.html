@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Lector de Código de Barras - ZXing</title>
+  <title>Lector de Códigos de Barras - Billar</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -14,7 +14,7 @@
     }
     video {
       width: 100%;
-      max-width: 500px;
+      max-width: 400px;
       border: 2px solid #333;
       border-radius: 8px;
     }
@@ -22,10 +22,10 @@
       margin-top: 15px;
       padding: 10px;
       background: #fff;
-      border: 1px solid #ccc;
       border-radius: 8px;
       font-size: 1.2em;
       font-weight: bold;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
     }
     select {
       margin: 10px;
@@ -36,55 +36,70 @@
 </head>
 <body>
 
-  <h2>📷 Escáner de Códigos de Barras</h2>
+<h2>📦 Escáner de Códigos de Barras</h2>
+<select id="cameraSelect"></select>
+<br>
+<video id="video" autoplay></video>
+<div id="result">Esperando código...</div>
 
-  <select id="cameraSelect"></select>
-  <br>
-  <video id="video" autoplay></video>
-  <div id="result">Esperando código...</div>
+<!-- ZXing Library -->
+<script src="https://unpkg.com/@zxing/library@latest"></script>
+<script>
+  const codeReader = new ZXing.BrowserMultiFormatReader();
+  const videoElement = document.getElementById('video');
+  const cameraSelect = document.getElementById('cameraSelect');
+  const resultDiv = document.getElementById('result');
 
-  <!-- ZXing library -->
-  <script src="https://unpkg.com/@zxing/library@latest"></script>
-  <script>
-    const codeReader = new ZXing.BrowserMultiFormatReader();
-    const videoElement = document.getElementById('video');
-    const cameraSelect = document.getElementById('cameraSelect');
-    const resultDiv = document.getElementById('result');
+  let lastCode = "";
 
-    // Listar cámaras disponibles
-    codeReader.listVideoInputDevices().then(videoInputDevices => {
-      videoInputDevices.forEach((device, index) => {
-        const option = document.createElement('option');
-        option.text = device.label || `Cámara ${index + 1}`;
-        option.value = device.deviceId;
-        cameraSelect.appendChild(option);
-      });
-
-      // Seleccionar la última cámara (normalmente trasera)
-      if (videoInputDevices.length > 1) {
-        cameraSelect.selectedIndex = videoInputDevices.length - 1;
-      }
-
-      startScan(cameraSelect.value);
+  // Listar cámaras disponibles
+  codeReader.listVideoInputDevices().then(videoInputDevices => {
+    videoInputDevices.forEach((device, index) => {
+      const option = document.createElement('option');
+      option.text = device.label || `Cámara ${index + 1}`;
+      option.value = device.deviceId;
+      cameraSelect.appendChild(option);
     });
 
-    // Iniciar el escaneo
-    function startScan(deviceId) {
-      codeReader.decodeFromVideoDevice(deviceId, videoElement, (result, err) => {
-        if (result) {
-          resultDiv.textContent = `✅ Código detectado: ${result.getText()}`;
-        }
-        if (err && !(err instanceof ZXing.NotFoundException)) {
-          console.error(err);
-        }
-      });
+    // Seleccionar la cámara trasera (última normalmente)
+    if (videoInputDevices.length > 1) {
+      cameraSelect.selectedIndex = videoInputDevices.length - 1;
     }
 
-    // Cambiar de cámara
-    cameraSelect.onchange = () => {
-      codeReader.reset();
-      startScan(cameraSelect.value);
-    };
-  </script>
+    startScan(cameraSelect.value);
+  });
+
+  function startScan(deviceId) {
+    codeReader.reset();
+    codeReader.decodeFromVideoDevice(
+      deviceId, 
+      videoElement, 
+      (result, err) => {
+        if (result && result.getText() !== lastCode) {
+          lastCode = result.getText();
+          resultDiv.textContent = "✅ Código detectado: " + lastCode;
+        }
+        if (err && !(err instanceof ZXing.NotFoundException)) {
+          console.warn(err);
+        }
+      }, 
+      { 
+        // Configuración de enfoque/zoom
+        constraints: {
+          facingMode: { exact: "environment" },
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+          advanced: [{ zoom: 2.0 }, { focusMode: "continuous" }]
+        }
+      }
+    ).catch(err => console.error("No se pudo iniciar cámara:", err));
+  }
+
+  // Cambiar de cámara
+  cameraSelect.onchange = () => {
+    startScan(cameraSelect.value);
+  };
+</script>
+
 </body>
 </html>
