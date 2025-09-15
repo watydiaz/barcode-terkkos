@@ -1,3 +1,21 @@
+// Función para reproducir un pitido
+function beep() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = 'sine';
+    o.frequency.value = 880;
+    g.gain.value = 0.15;
+    o.connect(g);
+    g.connect(ctx.destination);
+    o.start();
+    setTimeout(() => {
+      o.stop();
+      ctx.close();
+    }, 120);
+  } catch (e) { /* ignorar errores de audio */ }
+}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -26,6 +44,10 @@
 <br>
 
 <video id="video" autoplay></video>
+<div style="text-align:center; margin:10px 0;">
+  <button id="btnReiniciarCam">🔄 Reiniciar cámara</button>
+  <button id="btnDetenerCam">⏹️ Detener cámara</button>
+</div>
 <div id="result">Esperando código...</div>
 <br>
 
@@ -51,13 +73,29 @@
 
 <script src="https://unpkg.com/@zxing/library@latest"></script>
 <script>
-const codeReader = new ZXing.BrowserMultiFormatReader();
+let codeReader = new ZXing.BrowserMultiFormatReader();
 const videoElement = document.getElementById('video');
 const resultDiv = document.getElementById('result');
 const tabla = document.querySelector('#tablaPedidos tbody');
 const totalGeneral = document.getElementById('totalGeneral');
 const mesaCheck = document.getElementById('mesaCheck');
 const cameraSelect = document.getElementById('cameraSelect');
+const btnReiniciarCam = document.getElementById('btnReiniciarCam');
+const btnDetenerCam = document.getElementById('btnDetenerCam');
+// Botón para reiniciar cámara
+btnReiniciarCam.addEventListener('click', () => {
+  resultDiv.textContent = 'Reiniciando cámara...';
+  codeReader.reset();
+  setTimeout(() => {
+    iniciarEscaneo(cameraSelect.value);
+  }, 300);
+});
+
+// Botón para detener cámara
+btnDetenerCam.addEventListener('click', () => {
+  codeReader.reset();
+  resultDiv.textContent = 'Cámara detenida.';
+});
 
 let pedidos = {}; // key: código, value: {nombre, cantidad, precio, basePrecio}
 
@@ -72,7 +110,11 @@ function actualizarTabla() {
   let total = 0;
   for (const code in pedidos) {
     const p = pedidos[code];
-    const precioUnitario = mesaCheck.checked ? p.precio + 500 : p.precio;
+    // Solo sumar $500 si el checkbox está activo y es Cerveza Águila 330cc
+    let precioUnitario = p.precio;
+    if (mesaCheck.checked && code === "7702004002013") {
+      precioUnitario += 500;
+    }
     const subtotal = p.cantidad * precioUnitario;
     total += subtotal;
     tabla.innerHTML += `
@@ -122,6 +164,7 @@ mesaCheck.addEventListener('change', actualizarTabla);
 function agregarProductoPorCodigo(code){
   // Mostrar el código recibido para depuración
   resultDiv.textContent = "Código recibido: '" + code + "'";
+  beep();
   if(PRODUCTOS[code]){
     if(pedidos[code]){
       pedidos[code].cantidad += 1;
