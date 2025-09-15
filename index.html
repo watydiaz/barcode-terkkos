@@ -1,104 +1,124 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Lector de Códigos de Barras - Billar</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      background: #f4f4f4;
-      margin: 0;
-      padding: 10px;
-    }
-    video {
-      width: 100%;
-      max-width: 400px;
-      border: 2px solid #333;
-      border-radius: 8px;
-    }
-    #result {
-      margin-top: 15px;
-      padding: 10px;
-      background: #fff;
-      border-radius: 8px;
-      font-size: 1.2em;
-      font-weight: bold;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-    }
-    select {
-      margin: 10px;
-      padding: 8px;
-      font-size: 1em;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pedidos Billar</title>
+<style>
+  body { font-family: Arial; background:#f4f4f4; padding:10px; }
+  h2 { text-align:center; }
+  video { width:100%; max-width:400px; border:2px solid #333; border-radius:8px; }
+  table { width:100%; max-width:400px; margin:auto; border-collapse: collapse; }
+  th, td { padding:8px; border:1px solid #ccc; text-align:center; }
+  input[type=number]{ width:50px; }
+  #result { margin-top:10px; text-align:center; font-weight:bold; }
+</style>
 </head>
 <body>
 
-<h2>📦 Escáner de Códigos de Barras</h2>
-<select id="cameraSelect"></select>
-<br>
+<h2>📦 Escáner de Pedidos - Billar</h2>
 <video id="video" autoplay></video>
 <div id="result">Esperando código...</div>
+<br>
 
-<!-- ZXing Library -->
+<label>
+  <input type="checkbox" id="mesaCheck"> Activar mesa (+500 por producto)
+</label>
+<br><br>
+
+<table id="tablaPedidos">
+  <thead>
+    <tr>
+      <th>Producto</th>
+      <th>Cantidad</th>
+      <th>Precio Unitario</th>
+      <th>Total</th>
+      <th>Acción</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<p style="text-align:center;font-weight:bold;">Total general: $<span id="totalGeneral">0</span></p>
+
 <script src="https://unpkg.com/@zxing/library@latest"></script>
 <script>
-  const codeReader = new ZXing.BrowserMultiFormatReader();
-  const videoElement = document.getElementById('video');
-  const cameraSelect = document.getElementById('cameraSelect');
-  const resultDiv = document.getElementById('result');
+const codeReader = new ZXing.BrowserMultiFormatReader();
+const videoElement = document.getElementById('video');
+const resultDiv = document.getElementById('result');
+const tabla = document.querySelector('#tablaPedidos tbody');
+const totalGeneral = document.getElementById('totalGeneral');
+const mesaCheck = document.getElementById('mesaCheck');
 
-  let lastCode = "";
+let pedidos = {}; // key: código, value: objeto {nombre, cantidad, precio}
 
-  // Listar cámaras disponibles
-  codeReader.listVideoInputDevices().then(videoInputDevices => {
-    videoInputDevices.forEach((device, index) => {
-      const option = document.createElement('option');
-      option.text = device.label || `Cámara ${index + 1}`;
-      option.value = device.deviceId;
-      cameraSelect.appendChild(option);
-    });
+const PRODUCTOS = {
+  "900871231234567899260000000826": { nombre:"Cerveza Águila 330cc", precio:3300 }
+};
 
-    // Seleccionar la cámara trasera (última normalmente)
-    if (videoInputDevices.length > 1) {
-      cameraSelect.selectedIndex = videoInputDevices.length - 1;
-    }
-
-    startScan(cameraSelect.value);
-  });
-
-  function startScan(deviceId) {
-    codeReader.reset();
-    codeReader.decodeFromVideoDevice(
-      deviceId, 
-      videoElement, 
-      (result, err) => {
-        if (result && result.getText() !== lastCode) {
-          lastCode = result.getText();
-          resultDiv.textContent = "✅ Código detectado: " + lastCode;
-        }
-        if (err && !(err instanceof ZXing.NotFoundException)) {
-          console.warn(err);
-        }
-      }, 
-      { 
-        // Configuración de enfoque/zoom
-        constraints: {
-          facingMode: { exact: "environment" },
-          width: { ideal: 1920 },
-          height: { ideal: 1080 },
-          advanced: [{ zoom: 2.0 }, { focusMode: "continuous" }]
-        }
-      }
-    ).catch(err => console.error("No se pudo iniciar cámara:", err));
+function actualizarTabla() {
+  tabla.innerHTML = "";
+  let total = 0;
+  for (const code in pedidos) {
+    const p = pedidos[code];
+    const precioUnitario = p.precio + (mesaCheck.checked ? 500 : 0);
+    const totalProd = p.cantidad * precioUnitario;
+    total += totalProd;
+    tabla.innerHTML += `
+      <tr>
+        <td>${p.nombre}</td>
+        <td>
+          <button onclick="cambiarCantidad('${code}',-1)">-</button>
+          ${p.cantidad}
+          <button onclick="cambiarCantidad('${code}',1)">+</button>
+        </td>
+        <td>${precioUnitario}</td>
+        <td>${totalProd}</td>
+        <td><button onclick="eliminarProducto('${code}')">❌</button></td>
+      </tr>
+    `;
   }
+  totalGeneral.textContent = total;
+}
 
-  // Cambiar de cámara
-  cameraSelect.onchange = () => {
-    startScan(cameraSelect.value);
-  };
+function cambiarCantidad(code, delta){
+  pedidos[code].cantidad += delta;
+  if(pedidos[code].cantidad < 0) pedidos[code].cantidad = 0;
+  actualizarTabla();
+}
+
+function eliminarProducto(code){
+  delete pedidos[code];
+  actualizarTabla();
+}
+
+mesaCheck.addEventListener('change', actualizarTabla);
+
+function agregarProducto(code){
+  if(PRODUCTOS[code]){
+    if(pedidos[code]){
+      pedidos[code].cantidad += 1;
+    } else {
+      pedidos[code] = { ...PRODUCTOS[code], cantidad:1 };
+    }
+    actualizarTabla();
+  }
+}
+
+// Configuración de la cámara
+codeReader.listVideoInputDevices().then(videoInputDevices => {
+  let backCamera = videoInputDevices.find(cam=>/back|rear|environment/i.test(cam.label)) || videoInputDevices[0];
+  codeReader.decodeFromVideoDevice(backCamera.deviceId, videoElement, (result, err)=>{
+    if(result){
+      const code = result.getText();
+      resultDiv.textContent = "✅ Código detectado: " + code;
+      agregarProducto(code);
+    }
+    if(err && !(err instanceof ZXing.NotFoundException)){
+      console.warn(err);
+    }
+  }, { constraints:{ facingMode:"environment", width:{ideal:1920}, height:{ideal:1080} } });
+});
 </script>
 
 </body>
