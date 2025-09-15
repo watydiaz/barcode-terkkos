@@ -162,7 +162,7 @@ function iniciarEscaneo(deviceId){
   codeReader.decodeFromVideoDevice(deviceId, videoElement, (result, err)=>{
     if(result){
       const code = result.getText();
-      resultDiv.textContent = "✅ Código detectado: " + code;
+      // Mostrar siempre el código recibido
       agregarProductoPorCodigo(code); // buscar automáticamente y agregar
     }
     if(err && !(err instanceof ZXing.NotFoundException)){
