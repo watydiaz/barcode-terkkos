@@ -1,1 +1,120 @@
-﻿<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Barcode Terkkos</title></head><body><script>window.location.href="app.html";</script><div style="text-align:center;margin-top:50px;"><h1> Redirigiendo...</h1><p><a href="app.html">Sistema Modular</a> | <a href="backup/index-original.html">Escaner Original</a></p></div></body></html>
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barcode Terkkos - Menú Principal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="text-center mb-12">
+            <h1 class="text-5xl font-bold text-gray-800 mb-4">🍽️ Barcode Terkkos</h1>
+            <p class="text-xl text-gray-600">Sistema de Gestión de Restaurante</p>
+        </div>
+
+        <!-- Menú Principal -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+            
+            <!-- Sistema Principal -->
+            <div class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
+                <div class="text-4xl mb-4">📱</div>
+                <h2 class="text-xl font-bold mb-2">Sistema Principal</h2>
+                <p class="text-gray-600 mb-4">Aplicación completa con escáner de códigos de barras, gestión de pedidos y rondas.</p>
+                <a href="app.html" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-colors">
+                    Abrir Sistema
+                </a>
+            </div>
+
+            <!-- Consulta Base de Datos -->
+            <div class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
+                <div class="text-4xl mb-4">🔍</div>
+                <h2 class="text-xl font-bold mb-2">Consulta Base de Datos</h2>
+                <p class="text-gray-600 mb-4">Consulta directa a MySQL para ver pedidos pendientes y estadísticas en tiempo real.</p>
+                <a href="consulta_bd.html" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition-colors">
+                    Ver Consultas
+                </a>
+            </div>
+
+            <!-- Test de Conexión -->
+            <div class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
+                <div class="text-4xl mb-4">🔧</div>
+                <h2 class="text-xl font-bold mb-2">Test de Conexión</h2>
+                <p class="text-gray-600 mb-4">Verifica la conexión a la base de datos y muestra información del servidor.</p>
+                <a href="test_conexion.php" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded transition-colors">
+                    Probar BD
+                </a>
+            </div>
+
+            <!-- API Endpoint -->
+            <div class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
+                <div class="text-4xl mb-4">🔌</div>
+                <h2 class="text-xl font-bold mb-2">API Endpoint</h2>
+                <p class="text-gray-600 mb-4">Acceso directo al endpoint JSON de pedidos pendientes para integraciones.</p>
+                <a href="api/get_pedidos_pendientes.php" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition-colors">
+                    Ver API JSON
+                </a>
+            </div>
+
+            <!-- Sistema Original -->
+            <div class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
+                <div class="text-4xl mb-4">📜</div>
+                <h2 class="text-xl font-bold mb-2">Sistema Original</h2>
+                <p class="text-gray-600 mb-4">Versión original del escáner de códigos de barras (backup de la versión anterior).</p>
+                <a href="backup/index-original.html" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition-colors">
+                    Ver Original
+                </a>
+            </div>
+
+            <!-- Test Rápido -->
+            <div class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
+                <div class="text-4xl mb-4">🧪</div>
+                <h2 class="text-xl font-bold mb-2">Test Rápido</h2>
+                <p class="text-gray-600 mb-4">Pruebas rápidas de funcionalidad y diagnóstico de errores.</p>
+                <div class="flex gap-2">
+                    <a href="fix_test.html" class="bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-3 rounded transition-colors text-sm">
+                        🔧 Fixes
+                    </a>
+                    <a href="test_multiples_pedidos.html" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-3 rounded transition-colors text-sm">
+                        📋 Pedidos
+                    </a>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Información adicional -->
+        <div class="mt-12 bg-blue-50 border border-blue-200 rounded-lg p-6 max-w-4xl mx-auto">
+            <h3 class="font-bold text-blue-800 mb-4">ℹ️ Información del Sistema</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-blue-700">
+                <div>
+                    <h4 class="font-semibold mb-2">🏗️ Arquitectura:</h4>
+                    <ul class="space-y-1">
+                        <li>• Frontend: ES6 Modules + Tailwind CSS</li>
+                        <li>• Backend: PHP + MySQL</li>
+                        <li>• Persistencia: LocalStorage + Base de Datos</li>
+                        <li>• API: RESTful endpoints</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-2">🚀 Funcionalidades:</h4>
+                    <ul class="space-y-1">
+                        <li>• Escáner de códigos de barras</li>
+                        <li>• Gestión de pedidos y rondas</li>
+                        <li>• Consultas de base de datos</li>
+                        <li>• Reportes y estadísticas</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Auto-redirect (comentado para mostrar el menú) -->
+        <!-- <script>
+            setTimeout(() => {
+                window.location.href = "app.html";
+            }, 3000);
+        </script> -->
+    </div>
+</body>
+</html>

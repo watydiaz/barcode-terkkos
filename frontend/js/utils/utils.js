@@ -9,7 +9,14 @@ export class Utils {
   // ================================================================
 
   static formatoCOP(valor) {
-    return valor.toLocaleString('es-CO', { 
+    // Validar que el valor sea un número válido
+    if (valor === null || valor === undefined || isNaN(valor)) {
+      console.warn('formatoCOP: Valor inválido recibido:', valor);
+      return '$0';
+    }
+    
+    const numeroValido = parseFloat(valor) || 0;
+    return numeroValido.toLocaleString('es-CO', { 
       style: 'currency', 
       currency: 'COP', 
       maximumFractionDigits: 0 

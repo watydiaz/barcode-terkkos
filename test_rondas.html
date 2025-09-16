@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Creación de Rondas - Barcode Terkkos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen p-8">
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="mb-8 text-center">
+            <h1 class="text-4xl font-bold text-gray-800 mb-2">🧪 Test Creación de Rondas</h1>
+            <h2 class="text-xl text-gray-600">Diagnóstico del Sistema</h2>
+        </div>
+
+        <!-- Botones de prueba -->
+        <div class="flex gap-4 mb-6">
+            <button onclick="testInitSystem()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
+                🔧 Inicializar Sistema
+            </button>
+            <button onclick="testCreatePedido()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">
+                📋 Crear Pedido de Prueba
+            </button>
+            <button onclick="testCreateRonda()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded">
+                🍽️ Probar Crear Ronda
+            </button>
+            <button onclick="clearAll()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded">
+                🗑️ Limpiar Todo
+            </button>
+        </div>
+
+        <!-- Log de eventos -->
+        <div id="logContainer" class="bg-white rounded-lg p-4 shadow mb-6">
+            <h3 class="font-bold mb-2">📝 Log de Eventos:</h3>
+            <div id="logEvents" class="text-sm font-mono bg-gray-100 p-3 rounded max-h-60 overflow-y-auto">
+                Sistema iniciando...\n
+            </div>
+        </div>
+
+        <!-- Estado del sistema -->
+        <div id="systemStatus" class="bg-white rounded-lg p-4 shadow mb-6">
+            <h3 class="font-bold mb-2">🔍 Estado del Sistema:</h3>
+            <div id="statusContent" class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                <div id="statusDataService" class="p-2 bg-gray-100 rounded">
+                    <div class="font-semibold">DataService:</div>
+                    <div class="text-red-600">No inicializado</div>
+                </div>
+                <div id="statusModalManager" class="p-2 bg-gray-100 rounded">
+                    <div class="font-semibold">ModalManager:</div>
+                    <div class="text-red-600">No inicializado</div>
+                </div>
+                <div id="statusPedidoManager" class="p-2 bg-gray-100 rounded">
+                    <div class="font-semibold">PedidoManager:</div>
+                    <div class="text-red-600">No inicializado</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Área de pruebas -->
+        <div id="testArea" class="bg-white rounded-lg p-4 shadow">
+            <h3 class="font-bold mb-2">🎯 Área de Pruebas:</h3>
+            <div id="testContent">
+                <p class="text-gray-600">Los pedidos de prueba aparecerán aquí...</p>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <div class="mt-8 text-center">
+            <a href="app.html" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded mr-4">
+                📱 Ir al Sistema Principal
+            </a>
+            <a href="index.html" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
+                🏠 Inicio
+            </a>
+        </div>
+    </div>
+
+    <script>
+        let app = null;
+        
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('logEvents');
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = type === 'error' ? '❌' : type === 'success' ? '✅' : type === 'warning' ? '⚠️' : 'ℹ️';
+            logDiv.innerHTML += `[${timestamp}] ${prefix} ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            
+            if (type === 'error') {
+                console.error(message);
+            } else {
+                console.log(message);
+            }
+        }
+
+        function updateStatus(service, status, isActive = false) {
+            const element = document.getElementById(`status${service}`);
+            if (element) {
+                const statusDiv = element.querySelector('div:last-child');
+                statusDiv.className = isActive ? 'text-green-600' : 'text-red-600';
+                statusDiv.textContent = status;
+            }
+        }
+
+        async function testInitSystem() {
+            log('Iniciando sistema de prueba...', 'info');
+            
+            try {
+                // Importar módulos principales
+                log('Importando DataService...');
+                const { DataService } = await import('./frontend/js/services/data-service.js');
+                
+                log('Importando ModalManager...');
+                const { ModalManager } = await import('./frontend/js/modules/modal-manager.js');
+                
+                log('Importando PedidoManager...');
+                const { PedidoManager } = await import('./frontend/js/modules/pedido-manager.js');
+                
+                log('Importando RondaManager...');
+                const { RondaManager } = await import('./frontend/js/modules/ronda-manager.js');
+                
+                // Inicializar servicios
+                log('Creando instancia de DataService...');
+                const dataService = new DataService();
+                await dataService.init();
+                updateStatus('DataService', 'Inicializado ✓', true);
+                
+                log('Creando instancia de ModalManager...');
+                const modalManager = new ModalManager(dataService);
+                await modalManager.init();
+                updateStatus('ModalManager', 'Inicializado ✓', true);
+                
+                log('Creando instancia de PedidoManager...');
+                const pedidoManager = new PedidoManager(dataService, modalManager);
+                await pedidoManager.init();
+                updateStatus('PedidoManager', 'Inicializado ✓', true);
+                
+                log('Creando instancia de RondaManager...');
+                const rondaManager = new RondaManager(dataService, modalManager);
+                await rondaManager.init();
+                
+                // Crear objeto app
+                app = {
+                    dataService,
+                    modalManager,
+                    pedidoManager,
+                    rondaManager,
+                    isInitialized: true
+                };
+                
+                // Hacer disponibles globalmente para compatibilidad
+                window.app = app;
+                window.modalManager = modalManager;
+                window.pedidoManager = pedidoManager;
+                window.dataService = dataService;
+                
+                log('Sistema inicializado correctamente', 'success');
+                
+            } catch (error) {
+                log(`Error inicializando sistema: ${error.message}`, 'error');
+                console.error('Error completo:', error);
+            }
+        }
+
+        async function testCreatePedido() {
+            if (!app || !app.isInitialized) {
+                log('Sistema no inicializado. Ejecuta "Inicializar Sistema" primero', 'error');
+                return;
+            }
+            
+            try {
+                log('Creando pedido de prueba...', 'info');
+                
+                const testPedido = await app.pedidoManager.crearPedido('Cliente Prueba Test', 'test_' + Date.now());
+                
+                log(`Pedido creado: ${testPedido.id}`, 'success');
+                
+                // Renderizar en el área de pruebas
+                const testContent = document.getElementById('testContent');
+                testContent.innerHTML = `
+                    <div class="p-4 border rounded bg-blue-50">
+                        <h4 class="font-bold">Pedido de Prueba Creado</h4>
+                        <p><strong>ID:</strong> ${testPedido.id}</p>
+                        <p><strong>Cliente:</strong> ${testPedido.nombre_cliente}</p>
+                        <p><strong>Estado:</strong> ${testPedido.estado}</p>
+                        <button onclick="testCreateRondaForPedido('${testPedido.id}')" 
+                                class="mt-2 bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded text-sm">
+                            🍽️ Crear Ronda para este Pedido
+                        </button>
+                    </div>
+                `;
+                
+            } catch (error) {
+                log(`Error creando pedido: ${error.message}`, 'error');
+            }
+        }
+
+        async function testCreateRonda() {
+            if (!app || !app.isInitialized) {
+                log('Sistema no inicializado. Ejecuta "Inicializar Sistema" primero', 'error');
+                return;
+            }
+            
+            log('Probando apertura de modal de ronda...', 'info');
+            
+            try {
+                // Verificar que modalManager tenga el método
+                if (typeof app.modalManager.mostrarModalRonda === 'function') {
+                    log('Método mostrarModalRonda encontrado', 'success');
+                    app.modalManager.mostrarModalRonda('test_pedido');
+                    log('Modal de ronda abierto', 'success');
+                } else {
+                    log('Método mostrarModalRonda no encontrado', 'error');
+                    log('Métodos disponibles: ' + Object.getOwnPropertyNames(Object.getPrototypeOf(app.modalManager)).join(', '));
+                }
+                
+            } catch (error) {
+                log(`Error abriendo modal de ronda: ${error.message}`, 'error');
+            }
+        }
+
+        async function testCreateRondaForPedido(pedidoId) {
+            log(`Creando ronda para pedido: ${pedidoId}`, 'info');
+            
+            try {
+                app.modalManager.mostrarModalRonda(pedidoId);
+                log('Modal de ronda abierto para pedido específico', 'success');
+            } catch (error) {
+                log(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        function clearAll() {
+            localStorage.clear();
+            location.reload();
+        }
+
+        // Auto-inicializar al cargar la página
+        window.addEventListener('load', () => {
+            log('Página cargada, listo para pruebas', 'info');
+        });
+
+        // Función global para compatibilidad
+        window.abrirModalRonda = function(element) {
+            log('abrirModalRonda llamado desde botón', 'info');
+            testCreateRonda();
+        };
+    </script>
+</body>
+</html>

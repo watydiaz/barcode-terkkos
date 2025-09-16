@@ -178,6 +178,10 @@ class App {
     window.mesaManager = this.mesaManager;
     window.app = this;
     
+    // Debug: verificar que los métodos críticos estén disponibles
+    console.log('🔧 Verificando modalManager.mostrarModalRonda:', typeof this.modalManager.mostrarModalRonda);
+    console.log('🔧 Verificando pedidoManager.crearNuevoPedido:', typeof this.pedidoManager.crearNuevoPedido);
+    
     Utils.log('✅ Módulos disponibles globalmente');
   }
 
@@ -306,11 +310,11 @@ class App {
   }
 
   getSystemStatus() {
-    return {
+    const status = {
       initialized: this.isInitialized,
       modules: {
         dataService: !!this.dataService,
-        modalManager: !!this.modalManager,
+        modalManager: !!this.modalManager && typeof this.modalManager.mostrarModalRonda === 'function',
         pedidoManager: !!this.pedidoManager,
         rondaManager: !!this.rondaManager,
         pagoManager: !!this.pagoManager,
@@ -319,8 +323,57 @@ class App {
       stats: {
         pedidos_activos: this.pedidoManager?.getPedidosCount() || 0,
         mesas_activas: this.mesaManager?.getMesasActivas()?.length || 0
+      },
+      functionTests: {
+        'window.abrirModalRonda': typeof window.abrirModalRonda === 'function',
+        'modalManager.mostrarModalRonda': !!this.modalManager && typeof this.modalManager.mostrarModalRonda === 'function',
+        'modalManager.guardarRonda': !!this.modalManager && typeof this.modalManager.guardarRonda === 'function',
+        'pedidoManager.crearNuevoPedido': !!this.pedidoManager && typeof this.pedidoManager.crearNuevoPedido === 'function'
       }
     };
+
+    // Mostrar un resumen amigable
+    console.log('🔍 DIAGNÓSTICO DEL SISTEMA');
+    console.log('========================');
+    console.log('✅ Sistema Inicializado:', status.initialized);
+    console.log('📊 Módulos Activos:', Object.keys(status.modules).filter(k => status.modules[k]).length + '/6');
+    console.log('🍽️ Pedidos Activos:', status.stats.pedidos_activos);
+    console.log('🪑 Mesas Activas:', status.stats.mesas_activas);
+    console.log('');
+    console.log('🧪 Test de Funciones Críticas:');
+    Object.entries(status.functionTests).forEach(([name, works]) => {
+      console.log(`${works ? '✅' : '❌'} ${name}`);
+    });
+    
+    if (!status.functionTests['modalManager.mostrarModalRonda']) {
+      console.log('');
+      console.log('⚠️  PROBLEMA DETECTADO: La función mostrarModalRonda no está disponible');
+      console.log('💡 Solución: Verifica que ModalManager se haya inicializado correctamente');
+    }
+
+    return status;
+  }
+
+  diagnosticoSistema() {
+    const status = this.getSystemStatus();
+    
+    let mensaje = `🔍 DIAGNÓSTICO DEL SISTEMA\n\n`;
+    mensaje += `✅ Estado: ${status.initialized ? 'Inicializado' : 'No inicializado'}\n`;
+    mensaje += `📊 Módulos: ${Object.keys(status.modules).filter(k => status.modules[k]).length}/6 activos\n`;
+    mensaje += `🍽️ Pedidos activos: ${status.stats.pedidos_activos}\n`;
+    mensaje += `🪑 Mesas activas: ${status.stats.mesas_activas}\n\n`;
+    
+    mensaje += `🧪 FUNCIONES CRÍTICAS:\n`;
+    Object.entries(status.functionTests).forEach(([name, works]) => {
+      mensaje += `${works ? '✅' : '❌'} ${name}\n`;
+    });
+
+    if (!status.functionTests['modalManager.mostrarModalRonda']) {
+      mensaje += `\n⚠️ PROBLEMA DETECTADO:\nLa creación de rondas no funciona porque mostrarModalRonda no está disponible.\n\n💡 SOLUCIÓN:\n1. Recarga la página\n2. Si persiste, usa el Test de Rondas`;
+    }
+
+    alert(mensaje);
+    return status;
   }
 
   async restart() {
@@ -348,28 +401,57 @@ window.crearNuevoPedido = () => {
 window.abrirModalRonda = (element) => {
   console.log('🔧 abrirModalRonda llamado:', element);
   console.log('🔧 window.modalManager existe:', !!window.modalManager);
+  console.log('🔧 window.app existe:', !!window.app);
   
-  if (!window.modalManager) {
-    console.error('❌ window.modalManager no está disponible');
-    alert('Error: Sistema no completamente inicializado. Intenta recargar la página.');
+  // Verificar si el sistema está inicializado
+  if (!window.app || !window.app.isInitialized) {
+    console.error('❌ Sistema no inicializado completamente');
+    alert('⚠️ Sistema cargando... Intenta en unos segundos o recarga la página.');
     return;
   }
   
-  console.log('🔧 Métodos de modalManager:', Object.getOwnPropertyNames(Object.getPrototypeOf(window.modalManager)));
+  if (!window.modalManager) {
+    console.error('❌ window.modalManager no está disponible');
+    alert('❌ Error: ModalManager no disponible. Recarga la página.');
+    return;
+  }
   
-  const pedidoId = element.closest('[data-id]')?.dataset.id;
+  // Debug: mostrar información del modalManager
+  console.log('🔧 ModalManager tipo:', typeof window.modalManager);
+  console.log('🔧 Métodos disponibles:', Object.getOwnPropertyNames(Object.getPrototypeOf(window.modalManager)));
+  
+  // Buscar el elemento padre con data-id
+  const pedidoElement = element.closest('[data-id]');
+  console.log('🔧 Elemento pedido encontrado:', pedidoElement);
+  
+  if (!pedidoElement) {
+    console.error('❌ No se encontró el elemento padre con data-id');
+    alert('❌ Error: No se pudo identificar el pedido. Recarga la página.');
+    return;
+  }
+  
+  const pedidoId = pedidoElement.dataset.id;
   console.log('🔧 pedidoId encontrado:', pedidoId);
   
   if (pedidoId) {
     try {
-      window.modalManager.mostrarModalRonda(pedidoId);
-      console.log('✅ Modal de ronda abierto correctamente');
+      // Verificar que el método existe antes de llamarlo
+      if (typeof window.modalManager.mostrarModalRonda === 'function') {
+        console.log('✅ Llamando a mostrarModalRonda...');
+        window.modalManager.mostrarModalRonda(pedidoId);
+        console.log('✅ Modal de ronda llamado correctamente');
+      } else {
+        console.error('❌ El método mostrarModalRonda no existe');
+        alert('❌ Error: Método mostrarModalRonda no disponible');
+      }
     } catch (error) {
       console.error('❌ Error abriendo modal de ronda:', error);
-      alert(`Error abriendo modal: ${error.message}`);
+      console.error('❌ Stack trace:', error.stack);
+      alert(`❌ Error creando ronda: ${error.message}\n\n🔄 Intenta recargar la página.`);
     }
   } else {
-    console.error('❌ No se pudo encontrar el ID del pedido');
+    console.error('❌ pedidoId está vacío o undefined');
+    alert('❌ Error: ID del pedido no válido');
   }
 };
 

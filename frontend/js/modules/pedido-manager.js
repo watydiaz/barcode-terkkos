@@ -27,11 +27,6 @@ export class PedidoManager {
   }
 
   setupEvents() {
-    // Escuchar eventos de rondas
-    document.addEventListener('ronda:guardar', (e) => {
-      this.handleRondaGuardada(e.detail);
-    });
-
     // Escuchar eventos de pagos
     document.addEventListener('pago:completado', (e) => {
       this.handlePagoCompletado(e.detail);
@@ -40,6 +35,11 @@ export class PedidoManager {
     // Escuchar eventos de eliminación
     document.addEventListener('pedido:eliminar', (e) => {
       this.eliminarPedido(e.detail.pedidoId);
+    });
+
+    // Escuchar actualizaciones de totales desde RondaManager
+    document.addEventListener('pedido:actualizar-total', (e) => {
+      this.handleActualizarTotal(e.detail);
     });
   }
 
@@ -54,6 +54,9 @@ export class PedidoManager {
       pedidosData.forEach(pedidoData => {
         this.pedidos.set(pedidoData.id, pedidoData);
       });
+
+      // Actualizar nextPedidoId basándose en los pedidos existentes
+      this.updateNextPedidoId();
 
       this.renderizarPedidos();
       Utils.log(`${pedidosData.length} pedidos cargados`);
@@ -278,6 +281,16 @@ export class PedidoManager {
       elemento.dataset.mesaAlquilada = JSON.stringify(pedido.mesa_alquilada);
     }
 
+    // Renderizar las rondas si existen
+    if (pedido.rondas && pedido.rondas.length > 0) {
+      // Usar setTimeout para asegurar que el elemento esté en el DOM
+      setTimeout(() => {
+        if (window.rondaManager) {
+          window.rondaManager.renderizarRondasEnPedido(elemento, pedido.rondas);
+        }
+      }, 0);
+    }
+
     return elemento;
   }
 
@@ -345,47 +358,31 @@ export class PedidoManager {
   // MANEJO DE EVENTOS
   // ================================================================
 
-  handleRondaGuardada(detalle) {
-    const { acordeonId, productos, total } = detalle;
-    const pedido = this.pedidos.get(acordeonId);
+  // NOTA: handleRondaGuardada() removido - ahora lo maneja RondaManager
+
+  async handleActualizarTotal(detalle) {
+    const { pedidoId, nuevaRonda, totalRondas } = detalle;
     
-    if (!pedido) return;
-
-    // Crear nueva ronda
-    const numeroRonda = (pedido.rondas?.length || 0) + 1;
-    const nuevaRonda = {
-      id: Utils.generateId('ronda'),
-      numero_ronda: numeroRonda,
-      productos,
-      total,
-      responsable: '',
-      pagos: [],
-      estado: 'activa',
-      created_at: new Date().toISOString()
-    };
-
-    // Agregar ronda al pedido
-    if (!pedido.rondas) pedido.rondas = [];
-    pedido.rondas.push(nuevaRonda);
-
-    // Actualizar total del pedido
-    pedido.total_pedido = this.calcularTotalRondas(pedido.rondas);
-    pedido.updated_at = new Date().toISOString();
-
-    // Persistir cambios
-    this.dataService.savePedido(pedido);
-
-    // Log de actividad
-    this.dataService.logActividad(
-      'crear_ronda',
-      `Nueva ronda #${numeroRonda} creada en ${pedido.numero_pedido}`,
-      { pedido_id: pedido.id, ronda_id: nuevaRonda.id, total }
-    );
-
-    // Actualizar DOM
-    this.actualizarElementoPedido(pedido);
-
-    Utils.log(`Ronda guardada para pedido ${pedido.id}`);
+    try {
+      // Recargar el pedido desde DataService para asegurar datos actualizados
+      const pedidosData = await this.dataService.getPedidos();
+      const pedidoActualizado = pedidosData.find(p => p.id === pedidoId);
+      
+      if (pedidoActualizado) {
+        // Actualizar el pedido en memoria
+        this.pedidos.set(pedidoId, pedidoActualizado);
+        
+        // Actualizar el DOM
+        this.actualizarElementoPedido(pedidoActualizado);
+        
+        console.log('🔍 Pedido actualizado en PedidoManager:', pedidoActualizado);
+        console.log('🔍 Rondas en pedido actualizado:', pedidoActualizado.rondas?.length || 0);
+        
+        Utils.log(`Total actualizado para pedido ${pedidoId}: ${Utils.formatoCOP(pedidoActualizado.total_pedido)}`);
+      }
+    } catch (error) {
+      console.error('Error actualizando pedido:', error);
+    }
   }
 
   handlePagoCompletado(detalle) {
@@ -459,6 +456,27 @@ export class PedidoManager {
 
   generatePedidoId() {
     return `pedido-${this.nextPedidoId}`;
+  }
+
+  updateNextPedidoId() {
+    // Encontrar el mayor ID numérico existente
+    let maxId = 0;
+    
+    this.pedidos.forEach(pedido => {
+      // Extraer el número del ID (formato: pedido-1, pedido-2, etc.)
+      const match = pedido.id.match(/^pedido-(\d+)$/);
+      if (match) {
+        const idNum = parseInt(match[1], 10);
+        if (idNum > maxId) {
+          maxId = idNum;
+        }
+      }
+    });
+    
+    // El próximo ID será el mayor + 1
+    this.nextPedidoId = maxId + 1;
+    
+    Utils.log(`nextPedidoId actualizado a: ${this.nextPedidoId}`);
   }
 
   getPedidosCount() {

@@ -33,6 +33,11 @@ export class RondaManager {
     document.addEventListener('producto:eliminar', (e) => {
       this.eliminarProductoDeRonda(e.detail);
     });
+
+    // Escuchar guardado de rondas
+    document.addEventListener('ronda:guardar', (e) => {
+      this.handleGuardarRonda(e.detail);
+    });
   }
 
   // ================================================================
@@ -152,7 +157,13 @@ export class RondaManager {
                       title="Cancelar ronda">
                 ❌ Cancelar
               </button>
-            ` : ''}
+            ` : `
+              <button class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm" 
+                      onclick="verDetallesRonda('${pedidoId}', '${ronda.id}')" 
+                      title="Ver detalles de la ronda">
+                👁️ Ver Detalles
+              </button>
+            `}
           </div>
         </div>
 
@@ -202,10 +213,10 @@ export class RondaManager {
                         ` : `<span class="font-mono">${producto.cantidad}</span>`}
                       </td>
                       <td class="border border-gray-300 p-2 text-right font-mono">
-                        ${Utils.formatoCOP(producto.precio_unitario)}
+                        ${Utils.formatoCOP(producto.precio_unitario || 0)}
                       </td>
                       <td class="border border-gray-300 p-2 text-right font-mono font-bold">
-                        ${Utils.formatoCOP(producto.cantidad * producto.precio_unitario)}
+                        ${Utils.formatoCOP((producto.cantidad || 0) * (producto.precio_unitario || 0))}
                       </td>
                       ${ronda.estado === 'activa' ? `
                         <td class="border border-gray-300 p-2 text-center">
@@ -568,6 +579,75 @@ export class RondaManager {
     }
   }
 
+  async handleGuardarRonda(detalle) {
+    const { acordeonId, productos, total } = detalle;
+    
+    try {
+      // Obtener el elemento del pedido
+      const pedidoElement = document.getElementById(acordeonId);
+      if (!pedidoElement) {
+        Utils.showError('Pedido no encontrado');
+        return;
+      }
+
+      // Obtener datos actuales del pedido
+      const rondas = JSON.parse(pedidoElement.dataset.rondas || '[]');
+      
+      // Crear nueva ronda
+      const nuevaRonda = {
+        id: 'ronda_' + Date.now(),
+        numero_ronda: rondas.length + 1,
+        productos: productos.map(p => ({
+          nombre: p.nombre,
+          precio_unitario: p.precio_unitario,
+          cantidad: p.cantidad,
+          codigo: p.codigo || null
+        })),
+        total: total,
+        estado: 'guardada',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        pagos: []
+      };
+
+      // Agregar la nueva ronda
+      rondas.push(nuevaRonda);
+      
+      // Actualizar el dataset del pedido
+      pedidoElement.dataset.rondas = JSON.stringify(rondas);
+
+      // Guardar en el DataService
+      const pedidoId = acordeonId;
+      await this.dataService.saveRonda(nuevaRonda, pedidoId);
+      
+      // Debug: verificar que la ronda se guardó
+      console.log('🔍 Ronda guardada:', nuevaRonda);
+      console.log('🔍 Total de rondas en pedido:', rondas.length);
+
+      // Re-renderizar las rondas
+      this.renderizarRondasEnPedido(pedidoElement, rondas);
+
+      // Cambiar a la nueva ronda
+      this.cambiarPestanaRonda(pedidoId, rondas.length - 1);
+
+      // Disparar evento para que PedidoManager actualice el DOM
+      const eventActualizar = new CustomEvent('pedido:actualizar-total', {
+        detail: { 
+          pedidoId: pedidoId,
+          nuevaRonda: nuevaRonda,
+          totalRondas: rondas.reduce((sum, r) => sum + (r.total || 0), 0)
+        }
+      });
+      document.dispatchEvent(eventActualizar);
+
+      Utils.log(`Ronda guardada: ${nuevaRonda.id} en pedido ${pedidoId}`);
+
+    } catch (error) {
+      console.error('Error guardando ronda:', error);
+      Utils.showError('Error al guardar la ronda: ' + error.message);
+    }
+  }
+
   async guardarCambiosRonda(pedidoId, ronda) {
     // Actualizar timestamp
     ronda.updated_at = new Date().toISOString();
@@ -603,6 +683,36 @@ export class RondaManager {
       detail: { pedidoId }
     });
     document.dispatchEvent(event);
+  }
+
+  // ================================================================
+  // VER DETALLES DE RONDA
+  // ================================================================
+
+  verDetallesRonda(pedidoId, rondaId) {
+    try {
+      // Buscar la ronda
+      const pedidoElement = document.getElementById(pedidoId);
+      if (!pedidoElement) {
+        Utils.showError('Pedido no encontrado');
+        return;
+      }
+
+      const rondas = JSON.parse(pedidoElement.dataset.rondas || '[]');
+      const ronda = rondas.find(r => r.id === rondaId);
+      
+      if (!ronda) {
+        Utils.showError('Ronda no encontrada');
+        return;
+      }
+
+      // Crear modal con detalles de la ronda
+      this.modalManager.mostrarDetallesRonda(ronda, pedidoId);
+
+    } catch (error) {
+      console.error('Error mostrando detalles de ronda:', error);
+      Utils.showError('Error al mostrar los detalles de la ronda');
+    }
   }
 
   // ================================================================
@@ -661,5 +771,11 @@ window.eliminarProductoDeRonda = function(pedidoId, rondaId, productoIndex) {
 window.actualizarCantidadProducto = function(input, pedidoId, rondaId) {
   if (window.rondaManager) {
     window.rondaManager.actualizarCantidadProducto(input, pedidoId, rondaId);
+  }
+};
+
+window.verDetallesRonda = function(pedidoId, rondaId) {
+  if (window.rondaManager) {
+    window.rondaManager.verDetallesRonda(pedidoId, rondaId);
   }
 };

@@ -3,6 +3,8 @@
 // Maneja toda la comunicación con el backend/localStorage
 // ================================================================
 
+import { Utils } from '../utils/utils.js';
+
 export class DataService {
   constructor() {
     this.baseUrl = '/api'; // Para el futuro backend API
@@ -142,6 +144,54 @@ export class DataService {
       return await response.json();
     }
     return pedido;
+  }
+
+  async saveRonda(ronda, pedidoId) {
+    try {
+      // Obtener el pedido actual
+      const pedidos = await this.getPedidos();
+      const pedido = pedidos.find(p => p.id === pedidoId);
+      
+      if (!pedido) {
+        throw new Error('Pedido no encontrado');
+      }
+
+      // Inicializar rondas si no existen
+      if (!pedido.rondas) {
+        pedido.rondas = [];
+      }
+
+      // Buscar si la ronda ya existe (para actualizaciones)
+      const index = pedido.rondas.findIndex(r => r.id === ronda.id);
+      
+      if (index >= 0) {
+        // Actualizar ronda existente
+        pedido.rondas[index] = ronda;
+      } else {
+        // Agregar nueva ronda
+        pedido.rondas.push(ronda);
+      }
+
+      // Recalcular total del pedido
+      pedido.total_pedido = pedido.rondas.reduce((sum, r) => sum + (r.total || 0), 0);
+      if (pedido.mesa_alquilada) {
+        pedido.total_pedido += pedido.mesa_alquilada.costo_total || 0;
+      }
+
+      // Guardar el pedido completo
+      await this.savePedido(pedido);
+
+      // Debug: verificar el pedido guardado
+      console.log('🔍 Pedido con ronda guardado:', pedido);
+      console.log('🔍 Rondas en pedido guardado:', pedido.rondas?.length || 0);
+
+      Utils.log(`Ronda ${ronda.id} guardada en pedido ${pedidoId}`);
+      return ronda;
+
+    } catch (error) {
+      console.error('Error guardando ronda:', error);
+      throw error;
+    }
   }
 
   async deletePedido(pedidoId) {

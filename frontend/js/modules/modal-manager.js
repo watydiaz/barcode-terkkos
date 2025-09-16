@@ -324,7 +324,7 @@ export class ModalManager {
       
       productos.push({
         nombre,
-        precio,
+        precio_unitario: precio,
         cantidad,
         subtotal
       });
@@ -494,6 +494,126 @@ export class ModalManager {
     // TODO: Implementar filtro por categoría
     const categoria = document.getElementById('categoriaFilter').value;
     console.log('Filtrar por categoría:', categoria);
+  }
+
+  // ================================================================
+  // MODAL DE DETALLES DE RONDA
+  // ================================================================
+
+  mostrarDetallesRonda(ronda, pedidoId) {
+    const productos = ronda.productos || [];
+    const pagos = ronda.pagos || [];
+    const totalRonda = ronda.total || 0;
+    const totalPagado = pagos.reduce((sum, pago) => sum + pago.monto, 0);
+    const totalPendiente = totalRonda - totalPagado;
+
+    const content = `
+      <!-- Header de información -->
+      <div class="mb-6 p-4 bg-blue-50 rounded-lg">
+        <div class="flex justify-between items-start">
+          <div>
+            <h3 class="text-xl font-bold text-blue-800 mb-2">Ronda ${ronda.numero_ronda}</h3>
+            <div class="text-sm text-blue-600">
+              <p><strong>Estado:</strong> ${ronda.estado || 'Guardada'}</p>
+              <p><strong>Creada:</strong> ${Utils.formatearFecha(ronda.created_at)}</p>
+              ${ronda.responsable ? `<p><strong>Responsable:</strong> ${ronda.responsable}</p>` : ''}
+            </div>
+          </div>
+          <div class="text-right">
+            <div class="text-2xl font-bold ${totalPendiente > 0 ? 'text-orange-600' : 'text-green-600'}">
+              ${Utils.formatoCOP(totalRonda)}
+            </div>
+            <div class="text-sm text-gray-600">Total de la ronda</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Productos -->
+      <div class="mb-6">
+        <h4 class="font-semibold text-lg mb-3 flex items-center">
+          <span class="mr-2">🍽️</span>
+          Productos (${productos.length})
+        </h4>
+        
+        ${productos.length === 0 ? `
+          <div class="text-center py-8 text-gray-500 bg-gray-50 rounded">
+            <div class="text-4xl mb-2">🍽️</div>
+            <p>No hay productos en esta ronda</p>
+          </div>
+        ` : `
+          <div class="overflow-x-auto">
+            <table class="w-full border-collapse border border-gray-300">
+              <thead>
+                <tr class="bg-gray-100">
+                  <th class="border border-gray-300 p-3 text-left">Producto</th>
+                  <th class="border border-gray-300 p-3 text-center">Cantidad</th>
+                  <th class="border border-gray-300 p-3 text-right">Precio Unitario</th>
+                  <th class="border border-gray-300 p-3 text-right">Subtotal</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${productos.map(producto => `
+                  <tr class="hover:bg-gray-50">
+                    <td class="border border-gray-300 p-3">
+                      <div class="font-medium">${producto.nombre}</div>
+                      ${producto.codigo ? `<div class="text-sm text-gray-500">Código: ${producto.codigo}</div>` : ''}
+                    </td>
+                    <td class="border border-gray-300 p-3 text-center font-mono">
+                      ${producto.cantidad}
+                    </td>
+                    <td class="border border-gray-300 p-3 text-right font-mono">
+                      ${Utils.formatoCOP(producto.precio_unitario)}
+                    </td>
+                    <td class="border border-gray-300 p-3 text-right font-mono font-bold">
+                      ${Utils.formatoCOP(producto.cantidad * producto.precio_unitario)}
+                    </td>
+                  </tr>
+                `).join('')}
+                <tr class="bg-gray-100 font-bold">
+                  <td colspan="3" class="border border-gray-300 p-3 text-right">
+                    <strong>TOTAL DE LA RONDA:</strong>
+                  </td>
+                  <td class="border border-gray-300 p-3 text-right font-mono text-lg">
+                    ${Utils.formatoCOP(totalRonda)}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        `}
+      </div>
+
+      <!-- Estado de pagos -->
+      ${totalRonda > 0 ? `
+        <div class="mb-4 p-4 ${totalPendiente > 0 ? 'bg-orange-50 border-orange-200' : 'bg-green-50 border-green-200'} border rounded-lg">
+          <div class="flex justify-between items-center">
+            <div>
+              <span class="font-semibold">Estado de pago:</span>
+              <span class="ml-2 ${totalPendiente > 0 ? 'text-orange-600' : 'text-green-600'}">
+                ${totalPendiente > 0 ? '💰 Pendiente de pago' : '✅ Pagado completamente'}
+              </span>
+            </div>
+            <div class="text-right">
+              ${totalPagado > 0 ? `<div class="text-sm text-gray-600">Pagado: ${Utils.formatoCOP(totalPagado)}</div>` : ''}
+              ${totalPendiente > 0 ? `<div class="font-bold text-orange-600">Pendiente: ${Utils.formatoCOP(totalPendiente)}</div>` : ''}
+            </div>
+          </div>
+        </div>
+      ` : ''}
+    `;
+
+    const modal = this.createModal('modalDetallesRonda', `Detalles - Ronda ${ronda.numero_ronda}`, content, {
+      size: 'lg',
+      buttons: [
+        {
+          text: 'Cerrar',
+          class: 'bg-gray-500 hover:bg-gray-600 text-white',
+          onclick: `modalManager.closeModal('modalDetallesRonda')`
+        }
+      ]
+    });
+
+    return modal;
   }
 
   // ================================================================
