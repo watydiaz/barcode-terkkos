@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barcode Terkkos - Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .log { background: white; border-radius: 8px; padding: 15px; margin: 10px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .error { background: #fee; border-left: 4px solid #f00; }
+        .success { background: #efe; border-left: 4px solid #0a0; }
+        .warning { background: #ffc; border-left: 4px solid #fa0; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Barcode Terkkos - Diagnóstico del Sistema</h1>
+    
+    <div id="logs"></div>
+    
+    <script type="module">
+        const logContainer = document.getElementById('logs');
+        
+        function addLog(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `log ${type}`;
+            div.innerHTML = `<strong>[${new Date().toLocaleTimeString()}]</strong> ${message}`;
+            logContainer.appendChild(div);
+            console.log(message);
+        }
+        
+        async function testSystem() {
+            try {
+                addLog('🚀 Iniciando diagnóstico del sistema...', 'info');
+                
+                // Test 1: Cargar Utils
+                addLog('📁 Cargando Utils...', 'info');
+                const { Utils } = await import('./frontend/js/utils/utils.js');
+                addLog('✅ Utils cargado correctamente', 'success');
+                
+                // Test 2: Cargar DataService
+                addLog('📊 Cargando DataService...', 'info');
+                const { DataService } = await import('./frontend/js/services/data-service.js');
+                addLog('✅ DataService cargado correctamente', 'success');
+                
+                // Test 3: Crear instancia de DataService
+                addLog('🔧 Creando instancia de DataService...', 'info');
+                const dataService = new DataService();
+                addLog('✅ Instancia de DataService creada', 'success');
+                
+                // Test 4: Verificar método init
+                addLog('🔍 Verificando método init()...', 'info');
+                if (typeof dataService.init === 'function') {
+                    addLog('✅ Método init() encontrado', 'success');
+                } else {
+                    addLog('❌ Método init() NO encontrado', 'error');
+                    return;
+                }
+                
+                // Test 5: Ejecutar init
+                addLog('⚡ Ejecutando dataService.init()...', 'info');
+                await dataService.init();
+                addLog('✅ DataService.init() ejecutado correctamente', 'success');
+                
+                // Test 6: Cargar ModalManager
+                addLog('🪟 Cargando ModalManager...', 'info');
+                const { ModalManager } = await import('./frontend/js/modules/modal-manager.js');
+                const modalManager = new ModalManager(dataService);
+                modalManager.init();
+                addLog('✅ ModalManager inicializado', 'success');
+                
+                // Test 7: Cargar todos los managers
+                addLog('📋 Cargando PedidoManager...', 'info');
+                const { PedidoManager } = await import('./frontend/js/modules/pedido-manager.js');
+                addLog('✅ PedidoManager cargado', 'success');
+                
+                addLog('🍽️ Cargando RondaManager...', 'info');
+                const { RondaManager } = await import('./frontend/js/modules/ronda-manager.js');
+                addLog('✅ RondaManager cargado', 'success');
+                
+                addLog('💳 Cargando PagoManager...', 'info');
+                const { PagoManager } = await import('./frontend/js/modules/pago-manager.js');
+                addLog('✅ PagoManager cargado', 'success');
+                
+                addLog('🪑 Cargando MesaManager...', 'info');
+                const { MesaManager } = await import('./frontend/js/modules/mesa-manager.js');
+                addLog('✅ MesaManager cargado', 'success');
+                
+                addLog('🎉 ¡Todos los módulos se cargaron correctamente!', 'success');
+                addLog('✅ El sistema está listo para funcionar', 'success');
+                
+            } catch (error) {
+                addLog(`❌ Error en el diagnóstico: ${error.message}`, 'error');
+                addLog(`📚 Stack trace: ${error.stack}`, 'error');
+            }
+        }
+        
+        // Ejecutar test
+        testSystem();
+    </script>
+</body>
+</html>

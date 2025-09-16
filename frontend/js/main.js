@@ -33,12 +33,22 @@ class App {
       // Paso 1: Inicializar DataService
       Utils.log('📁 Inicializando DataService...');
       this.dataService = new DataService();
+      
+      if (typeof this.dataService.init !== 'function') {
+        throw new Error('DataService.init() no está definido');
+      }
+      
       await this.dataService.init();
       
       // Paso 2: Inicializar ModalManager
       Utils.log('🪟 Inicializando ModalManager...');
       this.modalManager = new ModalManager(this.dataService);
-      await this.modalManager.init();
+      
+      if (typeof this.modalManager.init !== 'function') {
+        throw new Error('ModalManager.init() no está definido');
+      }
+      
+      this.modalManager.init(); // ModalManager.init() es síncrono
       
       // Paso 3: Inicializar PedidoManager
       Utils.log('📋 Inicializando PedidoManager...');
@@ -81,8 +91,15 @@ class App {
       this.showSuccessIndicator();
       
     } catch (error) {
-      Utils.error('❌ Error inicializando sistema', error);
-      this.showError('Error inicializando el sistema: ' + error.message);
+      console.error('❌ Error inicializando sistema:', error);
+      console.error('Stack trace:', error.stack);
+      
+      let errorMsg = error.message || 'Error desconocido';
+      if (error.stack) {
+        console.error('Detalles del error:', error.stack);
+      }
+      
+      this.showError(`Error inicializando el sistema: ${errorMsg}`);
     }
   }
 
@@ -329,11 +346,30 @@ window.crearNuevoPedido = () => {
 };
 
 window.abrirModalRonda = (element) => {
-  if (window.modalManager) {
-    const pedidoId = element.closest('[data-id]')?.dataset.id;
-    if (pedidoId) {
+  console.log('🔧 abrirModalRonda llamado:', element);
+  console.log('🔧 window.modalManager existe:', !!window.modalManager);
+  
+  if (!window.modalManager) {
+    console.error('❌ window.modalManager no está disponible');
+    alert('Error: Sistema no completamente inicializado. Intenta recargar la página.');
+    return;
+  }
+  
+  console.log('🔧 Métodos de modalManager:', Object.getOwnPropertyNames(Object.getPrototypeOf(window.modalManager)));
+  
+  const pedidoId = element.closest('[data-id]')?.dataset.id;
+  console.log('🔧 pedidoId encontrado:', pedidoId);
+  
+  if (pedidoId) {
+    try {
       window.modalManager.mostrarModalRonda(pedidoId);
+      console.log('✅ Modal de ronda abierto correctamente');
+    } catch (error) {
+      console.error('❌ Error abriendo modal de ronda:', error);
+      alert(`Error abriendo modal: ${error.message}`);
     }
+  } else {
+    console.error('❌ No se pudo encontrar el ID del pedido');
   }
 };
 
@@ -377,14 +413,56 @@ window.reiniciarSistema = async () => {
 // INICIALIZACIÓN
 // ================================================================
 
-document.addEventListener('DOMContentLoaded', async () => {
-  Utils.log('📄 DOM cargado, iniciando sistema...');
-  
-  const app = new App();
-  window.app = app;
-  await app.init();
-  
-  console.log('%c🎉 BARCODE TERKKOS - SISTEMA MODULAR ACTIVO', 'color: #10B981; font-size: 18px; font-weight: bold;');
-  console.log('%c📊 diagnosticoSistema() - Ver estado', 'color: #6B7280; font-size: 12px;');
-  console.log('%c🔄 reiniciarSistema() - Reiniciar', 'color: #6B7280; font-size: 12px;');
-});
+async function initializeSystem() {
+  try {
+    Utils.log('📄 DOM cargado, verificando elementos...');
+    
+    // Verificar que los elementos críticos existan
+    const criticalElements = [
+      'acordeonesPedidos',
+      'btnNuevoPedido',
+      'loadingScreen'
+    ];
+    
+    const missingElements = criticalElements.filter(id => !document.getElementById(id));
+    
+    if (missingElements.length > 0) {
+      throw new Error(`Elementos críticos faltantes: ${missingElements.join(', ')}`);
+    }
+    
+    Utils.log('✅ Todos los elementos críticos encontrados');
+    Utils.log('🚀 Iniciando sistema...');
+    
+    const app = new App();
+    window.app = app;
+    await app.init();
+    
+    console.log('%c🎉 BARCODE TERKKOS - SISTEMA MODULAR ACTIVO', 'color: #10B981; font-size: 18px; font-weight: bold;');
+    console.log('%c📊 diagnosticoSistema() - Ver estado', 'color: #6B7280; font-size: 12px;');
+    console.log('%c🔄 reiniciarSistema() - Reiniciar', 'color: #6B7280; font-size: 12px;');
+    
+  } catch (error) {
+    console.error('❌ Error en inicialización:', error);
+    
+    // Mostrar error en la interfaz
+    document.body.innerHTML = `
+      <div style="text-align: center; padding: 50px; background: #fee; color: #c00;">
+        <h1>❌ Error de Inicialización</h1>
+        <p><strong>Error:</strong> ${error.message}</p>
+        <details style="margin-top: 20px; text-align: left; max-width: 600px; margin-left: auto; margin-right: auto;">
+          <summary>Ver detalles técnicos</summary>
+          <pre style="background: #f8f8f8; padding: 15px; border-radius: 4px; overflow: auto;">${error.stack}</pre>
+        </details>
+        <button onclick="location.reload()" style="padding: 10px 20px; margin-top: 20px;">🔄 Reintentar</button>
+      </div>
+    `;
+  }
+}
+
+// Esperar a que el DOM y todos los recursos estén listos
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initializeSystem);
+} else {
+  // DOM ya está listo
+  initializeSystem();
+}

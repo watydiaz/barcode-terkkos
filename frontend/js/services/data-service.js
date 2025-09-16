@@ -8,6 +8,47 @@ export class DataService {
     this.baseUrl = '/api'; // Para el futuro backend API
     this.useLocalStorage = true; // Por ahora usar localStorage, luego cambiar a false
     this.config = {};
+    this.isInitialized = false;
+  }
+
+  // ================================================================
+  // INICIALIZACIÓN
+  // ================================================================
+
+  async init() {
+    try {
+      console.log('📁 Inicializando DataService...');
+      
+      // Cargar configuración del sistema
+      await this.loadSystemConfig();
+      
+      // Verificar estructura de localStorage
+      this.initializeLocalStorage();
+      
+      this.isInitialized = true;
+      console.log('✅ DataService inicializado correctamente');
+      return true;
+    } catch (error) {
+      console.error('❌ Error inicializando DataService:', error);
+      throw error;
+    }
+  }
+
+  initializeLocalStorage() {
+    // Verificar y crear estructuras básicas si no existen
+    const keys = ['barcode_terkkos_pedidos', 'barcode_terkkos_mesas', 'barcode_terkkos_productos'];
+    
+    keys.forEach(key => {
+      if (!localStorage.getItem(key)) {
+        localStorage.setItem(key, JSON.stringify([]));
+      }
+    });
+
+    // Verificar configuración
+    if (!localStorage.getItem('barcode_terkkos_config')) {
+      const defaultConfig = this.getDefaultConfig();
+      localStorage.setItem('barcode_terkkos_config', JSON.stringify(defaultConfig));
+    }
   }
 
   // ================================================================
@@ -37,6 +78,13 @@ export class DataService {
       auto_eliminar_rondas_pagadas: true,
       version_sistema: '1.0.0'
     };
+  }
+
+  async getConfiguracion() {
+    if (!this.config || Object.keys(this.config).length === 0) {
+      await this.loadSystemConfig();
+    }
+    return this.config;
   }
 
   async saveConfig(key, value) {

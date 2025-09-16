@@ -6,7 +6,8 @@
 import { Utils } from '../utils/utils.js';
 
 export class ModalManager {
-  constructor() {
+  constructor(dataService) {
+    this.dataService = dataService;
     this.activeModals = new Map();
     this.modalContainer = null;
   }
@@ -151,6 +152,11 @@ export class ModalManager {
   // ================================================================
   // MODAL DE RONDA (Crear/Editar productos)
   // ================================================================
+
+  mostrarModalRonda(targetAcordeonId = '') {
+    // Alias para createRondaModal para compatibilidad
+    return this.createRondaModal(targetAcordeonId);
+  }
 
   createRondaModal(targetAcordeonId = '') {
     const content = `
@@ -390,26 +396,47 @@ export class ModalManager {
     const lista = document.getElementById('productosLista');
     if (!lista) return;
 
-    // Productos de prueba (después vendrán del DataService)
-    const productos = [
-      { id: 1, codigo: 'BEER001', nombre: 'Cerveza Águila 330ml', precio_venta: 3500, categoria: 'Bebidas Alcohólicas', stock_actual: 118 },
-      { id: 2, codigo: 'BEER002', nombre: 'Cerveza Club Colombia 330ml', precio_venta: 4000, categoria: 'Bebidas Alcohólicas', stock_actual: 80 },
-      { id: 21, codigo: 'SODA001', nombre: 'Coca Cola 350ml', precio_venta: 2500, categoria: 'Bebidas No Alcohólicas', stock_actual: 200 },
-      { id: 31, codigo: 'BURG001', nombre: 'Hamburguesa Sencilla', precio_venta: 12000, categoria: 'Comida Rápida', stock_actual: 0 },
-      { id: 41, codigo: 'SNACK001', nombre: 'Papas Francesas', precio_venta: 4000, categoria: 'Aperitivos', stock_actual: 0 }
-    ];
+    try {
+      // Cargar productos desde DataService
+      const productos = await this.dataService.getProductos();
+      
+      // Mapear categorías para mostrar nombres legibles
+      const categoriasMap = {
+        1: 'Bebidas Alcohólicas',
+        2: 'Bebidas No Alcohólicas', 
+        3: 'Comida Rápida',
+        4: 'Aperitivos',
+        5: 'Postres',
+        6: 'Platos Principales',
+        7: 'Desayunos',
+        8: 'Otros'
+      };
 
-    lista.innerHTML = productos.map(producto => `
-      <div class="border rounded p-3 hover:bg-gray-50 cursor-pointer producto-item" 
-           onclick="modalManager.seleccionarProductoCatalogo(${JSON.stringify(producto).replace(/"/g, '&quot;')})">
-        <div class="font-semibold">${producto.nombre}</div>
-        <div class="text-sm text-gray-600">${producto.categoria}</div>
-        <div class="text-lg font-bold text-green-600">${Utils.formatoCOP(producto.precio_venta)}</div>
-        <div class="text-xs ${producto.stock_actual > 0 ? 'text-blue-600' : 'text-orange-600'}">
-          Stock: ${producto.stock_actual > 0 ? producto.stock_actual : 'Sin límite'}
+      lista.innerHTML = productos.map(producto => {
+        const categoria = categoriasMap[producto.categoria_id] || 'Otros';
+        return `
+          <div class="border rounded p-3 hover:bg-gray-50 cursor-pointer producto-item" 
+               onclick="modalManager.seleccionarProductoCatalogo(${JSON.stringify(producto).replace(/"/g, '&quot;')})">
+            <div class="font-semibold">${producto.nombre}</div>
+            <div class="text-sm text-gray-600">${categoria}</div>
+            <div class="text-lg font-bold text-green-600">${Utils.formatoCOP(producto.precio_venta)}</div>
+            <div class="text-xs ${producto.stock_actual > 0 ? 'text-blue-600' : 'text-orange-600'}">
+              Stock: ${producto.stock_actual > 0 ? producto.stock_actual : 'Sin límite'}
+            </div>
+          </div>
+        `;
+      }).join('');
+      
+    } catch (error) {
+      console.error('Error cargando productos:', error);
+      lista.innerHTML = `
+        <div class="text-center py-8 text-gray-500">
+          <div class="text-4xl mb-2">❌</div>
+          <p>Error cargando productos</p>
+          <p class="text-sm">${error.message}</p>
         </div>
-      </div>
-    `).join('');
+      `;
+    }
   }
 
   seleccionarProductoCatalogo(producto) {
@@ -520,6 +547,3 @@ export class ModalManager {
     });
   }
 }
-
-// Crear instancia global para compatibilidad
-window.modalManager = new ModalManager();
