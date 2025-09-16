@@ -203,8 +203,20 @@
       });
       if (rondas.length > 0) {
         mostrarRonda(acordeon, rondaActiva);
+        totalAcumuladoDiv.style.display = 'block';
+      } else {
+        // Si no hay rondas, esto no debería ocurrir porque el acordeón se elimina
+        totalAcumuladoDiv.style.display = 'none';
+        contenidoDiv.innerHTML = '';
       }
-       totalAcumuladoDiv.textContent = 'Total del pedido: ' + (totalAcumulado > 0 ? totalAcumulado.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }) : '$ 0');
+      
+      // Actualizar el total en el header (píldora azul)
+      const totalPill = acordeon.querySelector('.total-pill');
+      if (totalPill) {
+        totalPill.textContent = totalAcumulado > 0 ? '$' + totalAcumulado.toLocaleString('es-CO') : '$0';
+      }
+      
+      totalAcumuladoDiv.textContent = 'Total del pedido: ' + (totalAcumulado > 0 ? totalAcumulado.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }) : '$ 0');
     }
 
     // Muestra el contenido de una ronda seleccionada
@@ -276,7 +288,7 @@
       html += `<span class="text-gray-600">por persona</span>`;
       html += `</div>`;
       html += `<button type="button" class="bg-orange-600 hover:bg-orange-700 text-white px-3 py-2 rounded font-semibold" onclick="pagoParcialeRonda('${acordeon.id}', ${idx})" title="Registrar pago parcial de esta ronda">💵 Pago Parcial</button>`;
-      html += `<button type="button" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-semibold" onclick="marcarPagado('${acordeon.id}')" title="Marcar todo el pedido como pagado y eliminarlo">💰 Pago Completo</button>`;
+      html += `<button type="button" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold" onclick="pagarRondaCompleta('${acordeon.id}', ${idx})" title="Pagar completamente la ronda ${idx + 1}">� Pago de Ronda ${idx + 1}</button>`;
       html += `</div>`;
       
       // Mostrar pagos parciales registrados si existen
@@ -816,15 +828,22 @@
       acordeon.id = id;
       acordeon.dataset.id = id;
       acordeon.innerHTML = `
-        <button type="button" class="w-full flex justify-between items-center px-4 py-3 bg-gray-200 hover:bg-gray-300 focus:outline-none" onclick="this.nextElementSibling.classList.toggle('hidden')">
+        <div class="w-full flex justify-between items-center px-4 py-3 bg-gray-200 hover:bg-gray-300 cursor-pointer" onclick="this.nextElementSibling.classList.toggle('hidden')">
           <span class="font-semibold">${nombreCliente} <span class='text-xs text-gray-500'>(Pedido #0)</span></span>
-          <span class="ml-auto mr-2 total-pill bg-blue-600 text-white font-bold rounded-full px-4 py-1 text-base" style="min-width:120px;text-align:right;"></span>
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-        </button>
+          <div class="flex items-center gap-2">
+            <button class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm font-semibold" onclick="event.stopPropagation(); pagoCompletoTotal(this)" title="Pagar toda la deuda">💰 Pago Completo</button>
+            <span class="total-pill bg-blue-600 text-white font-bold rounded-full px-4 py-1 text-base" style="min-width:120px;text-align:right;"></span>
+            <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+          </div>
+        </div>
         <div class="px-4 py-3 bg-white">
-          <button class="mb-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold" onclick="abrirModalRonda(this)">Crear ronda</button>
+          <div class="flex gap-2 mb-4">
+            <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold" onclick="abrirModalRonda(this)">Crear ronda</button>
+            <button class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded font-semibold" onclick="alquilarMesa(this)">🪑 Alquilar Mesa</button>
+          </div>
           <div class="tabs-rondas flex gap-2 mb-4"></div>
           <div class="contenido-ronda"></div>
+          <div class="mesa-alquilada hidden bg-purple-50 p-3 rounded border mb-4"></div>
           <div class="font-bold text-right mt-4 total-acumulado" style="display:none"></div>
         </div>
       `;
@@ -862,15 +881,22 @@
     acordeon.id = `pedido-${id}`;
     acordeon.dataset.id = `pedido-${id}`;
     acordeon.innerHTML = `
-      <button type="button" class="w-full flex justify-between items-center px-4 py-3 bg-gray-200 hover:bg-gray-300 focus:outline-none" onclick="this.nextElementSibling.classList.toggle('hidden')">
+      <div class="w-full flex justify-between items-center px-4 py-3 bg-gray-200 hover:bg-gray-300 cursor-pointer" onclick="this.nextElementSibling.classList.toggle('hidden')">
         <span class="font-semibold">${nombreCliente} <span class='text-xs text-gray-500'>(Pedido #${id})</span></span>
-        <span class="ml-auto mr-2 total-pill bg-blue-600 text-white font-bold rounded-full px-4 py-1 text-base" style="min-width:120px;text-align:right;"></span>
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-      </button>
+        <div class="flex items-center gap-2">
+          <button class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm font-semibold" onclick="event.stopPropagation(); pagoCompletoTotal(this)" title="Pagar toda la deuda">💰 Pago Completo</button>
+          <span class="total-pill bg-blue-600 text-white font-bold rounded-full px-4 py-1 text-base" style="min-width:120px;text-align:right;"></span>
+          <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+        </div>
+      </div>
       <div class="px-4 py-3 bg-white">
-        <button class="mb-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold" onclick="abrirModalRonda(this)">Crear ronda</button>
+        <div class="flex gap-2 mb-4">
+          <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold" onclick="abrirModalRonda(this)">Crear ronda</button>
+          <button class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded font-semibold" onclick="alquilarMesa(this)">🪑 Alquilar Mesa</button>
+        </div>
         <div class="tabs-rondas flex gap-2 mb-4"></div>
         <div class="contenido-ronda"></div>
+        <div class="mesa-alquilada hidden bg-purple-50 p-3 rounded border mb-4"></div>
         <div class="font-bold text-right mt-4 total-acumulado" style="display:none"></div>
       </div>
     `;
@@ -878,6 +904,668 @@
     acordeones.appendChild(acordeon);
     setTimeout(() => renderizarRondas(acordeon), 0);
   });
+
+  // Sistema de alquiler de mesas
+  const modalMesas = document.createElement('div');
+  modalMesas.id = 'modalSeleccionMesa';
+  modalMesas.className = 'fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center hidden z-50';
+  modalMesas.innerHTML = `
+    <div class="bg-white rounded-lg shadow-lg max-w-md w-full mx-4">
+      <div class="p-6">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-semibold">🪑 Seleccionar Mesa</h3>
+          <button type="button" onclick="cerrarModalMesas()" class="text-gray-400 hover:text-gray-600">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <button type="button" class="mesa-btn bg-purple-100 hover:bg-purple-200 border-2 border-purple-300 rounded-lg p-4 text-center transition-colors" data-mesa="1">
+            <div class="text-2xl mb-2">🪑</div>
+            <div class="font-semibold">Mesa 1</div>
+            <div class="text-sm text-gray-600">$7,000/hora</div>
+          </button>
+          <button type="button" class="mesa-btn bg-purple-100 hover:bg-purple-200 border-2 border-purple-300 rounded-lg p-4 text-center transition-colors" data-mesa="2">
+            <div class="text-2xl mb-2">🪑</div>
+            <div class="font-semibold">Mesa 2</div>
+            <div class="text-sm text-gray-600">$7,000/hora</div>
+          </button>
+          <button type="button" class="mesa-btn bg-purple-100 hover:bg-purple-200 border-2 border-purple-300 rounded-lg p-4 text-center transition-colors" data-mesa="3">
+            <div class="text-2xl mb-2">🪑</div>
+            <div class="font-semibold">Mesa 3</div>
+            <div class="text-sm text-gray-600">$7,000/hora</div>
+          </button>
+          <button type="button" class="mesa-btn bg-purple-100 hover:bg-purple-200 border-2 border-purple-300 rounded-lg p-4 text-center transition-colors" data-mesa="4">
+            <div class="text-2xl mb-2">🪑</div>
+            <div class="font-semibold">Mesa 4</div>
+            <div class="text-sm text-gray-600">$7,000/hora</div>
+          </button>
+        </div>
+        <div class="mt-4 text-center text-sm text-gray-600">
+          <div>💡 Precio: $7,000 pesos por hora</div>
+          <div>⏱️ Se cobra por minutos exactos</div>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modalMesas);
+
+  // Variables globales para el sistema de mesas
+  let acordeonActual = null;
+
+  // Función para abrir modal de selección de mesa
+  window.alquilarMesa = function(btn) {
+    acordeonActual = btn.closest('.border.rounded.shadow');
+    if (!acordeonActual) return;
+    
+    // Verificar si ya tiene una mesa alquilada
+    const mesaDiv = acordeonActual.querySelector('.mesa-alquilada');
+    if (mesaDiv && !mesaDiv.classList.contains('hidden')) {
+      alert('Ya hay una mesa alquilada para este pedido. Termina el alquiler antes de seleccionar otra.');
+      return;
+    }
+    
+    document.getElementById('modalSeleccionMesa').classList.remove('hidden');
+  };
+
+  // Función para cerrar modal de mesas
+  window.cerrarModalMesas = function() {
+    document.getElementById('modalSeleccionMesa').classList.add('hidden');
+    acordeonActual = null;
+  };
+
+  // Event listeners para selección de mesa
+  document.querySelectorAll('.mesa-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const numeroMesa = this.dataset.mesa;
+      iniciarAlquilerMesa(numeroMesa);
+      cerrarModalMesas();
+    });
+  });
+
+  // Función para iniciar el alquiler de una mesa
+  function iniciarAlquilerMesa(numeroMesa) {
+    if (!acordeonActual) return;
+    
+    const mesaDiv = acordeonActual.querySelector('.mesa-alquilada');
+    const ahora = new Date();
+    
+    // Crear objeto de mesa alquilada
+    const mesaData = {
+      numero: numeroMesa,
+      inicio: ahora.toISOString(),
+      activa: true,
+      precioHora: 7000
+    };
+    
+    // Guardar datos en el acordeón
+    acordeonActual.dataset.mesaAlquilada = JSON.stringify(mesaData);
+    
+    // Mostrar el div de mesa alquilada
+    mesaDiv.classList.remove('hidden');
+    mesaDiv.innerHTML = `
+      <div class="flex justify-between items-center mb-3">
+        <h4 class="font-semibold text-purple-700">🪑 Mesa ${numeroMesa} - Alquilada</h4>
+        <button class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm" onclick="terminarAlquilerMesa(this)">Terminar</button>
+      </div>
+      <div class="grid grid-cols-2 gap-4 text-sm">
+        <div>
+          <div class="font-medium">Inicio:</div>
+          <div class="text-gray-600">${ahora.toLocaleString('es-CO')}</div>
+        </div>
+        <div>
+          <div class="font-medium">Tiempo transcurrido:</div>
+          <div class="tiempo-transcurrido font-mono text-purple-700">00:00:00</div>
+        </div>
+        <div>
+          <div class="font-medium">Costo actual:</div>
+          <div class="costo-actual font-mono font-bold text-purple-700">$0</div>
+        </div>
+        <div>
+          <div class="font-medium">Precio:</div>
+          <div class="text-gray-600">$7,000/hora</div>
+        </div>
+      </div>
+    `;
+    
+    // Iniciar el contador de tiempo
+    iniciarContadorMesa(acordeonActual);
+    
+    // Mensaje de confirmación
+    alert(`Mesa ${numeroMesa} alquilada correctamente. El contador ha iniciado.`);
+  }
+
+  // Función para iniciar el contador de tiempo de mesa
+  function iniciarContadorMesa(acordeon) {
+    // Limpiar cualquier intervalo existente
+    if (acordeon.intervalMesa) {
+      clearInterval(acordeon.intervalMesa);
+    }
+    
+    acordeon.intervalMesa = setInterval(() => {
+      actualizarContadorMesa(acordeon);
+    }, 1000); // Actualizar cada segundo
+  }
+
+  // Función para actualizar el contador de tiempo y costo
+  function actualizarContadorMesa(acordeon) {
+    try {
+      const mesaData = JSON.parse(acordeon.dataset.mesaAlquilada || '{}');
+      if (!mesaData.activa) return;
+      
+      const inicio = new Date(mesaData.inicio);
+      const ahora = new Date();
+      const diferenciaMs = ahora - inicio;
+      
+      // Calcular tiempo transcurrido
+      const horas = Math.floor(diferenciaMs / (1000 * 60 * 60));
+      const minutos = Math.floor((diferenciaMs % (1000 * 60 * 60)) / (1000 * 60));
+      const segundos = Math.floor((diferenciaMs % (1000 * 60)) / 1000);
+      
+      // Formatear tiempo
+      const tiempoFormateado = 
+        String(horas).padStart(2, '0') + ':' +
+        String(minutos).padStart(2, '0') + ':' +
+        String(segundos).padStart(2, '0');
+      
+      // Calcular costo (por minutos exactos)
+      const minutosTotal = Math.floor(diferenciaMs / (1000 * 60));
+      const costoTotal = Math.round((minutosTotal / 60) * mesaData.precioHora);
+      
+      // Actualizar display
+      const tiempoDiv = acordeon.querySelector('.tiempo-transcurrido');
+      const costoDiv = acordeon.querySelector('.costo-actual');
+      
+      if (tiempoDiv) tiempoDiv.textContent = tiempoFormateado;
+      if (costoDiv) costoDiv.textContent = '$' + costoTotal.toLocaleString('es-CO');
+      
+    } catch (error) {
+      console.error('Error actualizando contador de mesa:', error);
+    }
+  }
+
+  // Función para terminar el alquiler de mesa
+  window.terminarAlquilerMesa = function(btn) {
+    const acordeon = btn.closest('.border.rounded.shadow');
+    if (!acordeon) return;
+    
+    try {
+      const mesaData = JSON.parse(acordeon.dataset.mesaAlquilada || '{}');
+      if (!mesaData.activa) return;
+      
+      const inicio = new Date(mesaData.inicio);
+      const fin = new Date();
+      const diferenciaMs = fin - inicio;
+      
+      // Calcular tiempo total y costo final
+      const minutosTotal = Math.ceil(diferenciaMs / (1000 * 60)); // Redondear hacia arriba
+      const costoFinal = Math.round((minutosTotal / 60) * mesaData.precioHora);
+      const horasCompletas = Math.floor(minutosTotal / 60);
+      const minutosRestantes = minutosTotal % 60;
+      
+      // Confirmar terminación
+      const mensaje = `Mesa ${mesaData.numero} - Resumen del alquiler:
+      
+🕐 Tiempo total: ${horasCompletas}h ${minutosRestantes}m
+💰 Costo total: $${costoFinal.toLocaleString('es-CO')}
+
+¿Confirmas terminar el alquiler?`;
+      
+      if (confirm(mensaje)) {
+        // Marcar como inactiva
+        mesaData.activa = false;
+        mesaData.fin = fin.toISOString();
+        mesaData.costoFinal = costoFinal;
+        acordeon.dataset.mesaAlquilada = JSON.stringify(mesaData);
+        
+        // Limpiar intervalo
+        if (acordeon.intervalMesa) {
+          clearInterval(acordeon.intervalMesa);
+          delete acordeon.intervalMesa;
+        }
+        
+        // Actualizar display para mostrar resumen final
+        const mesaDiv = acordeon.querySelector('.mesa-alquilada');
+        mesaDiv.innerHTML = `
+          <div class="flex justify-between items-center mb-3">
+            <h4 class="font-semibold text-gray-700">🪑 Mesa ${mesaData.numero} - Terminada</h4>
+            <button class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded text-sm" onclick="ocultarResumenMesa(this)">Ocultar</button>
+          </div>
+          <div class="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <div class="font-medium">Inicio:</div>
+              <div class="text-gray-600">${inicio.toLocaleString('es-CO')}</div>
+            </div>
+            <div>
+              <div class="font-medium">Fin:</div>
+              <div class="text-gray-600">${fin.toLocaleString('es-CO')}</div>
+            </div>
+            <div>
+              <div class="font-medium">Tiempo total:</div>
+              <div class="font-mono text-gray-700">${horasCompletas}h ${minutosRestantes}m</div>
+            </div>
+            <div>
+              <div class="font-medium">Costo final:</div>
+              <div class="font-mono font-bold text-green-600">$${costoFinal.toLocaleString('es-CO')}</div>
+            </div>
+          </div>
+          <div class="mt-3 p-2 bg-green-50 rounded text-center text-sm text-green-700">
+            ✅ Alquiler completado - Agregar $${costoFinal.toLocaleString('es-CO')} a la cuenta
+          </div>
+        `;
+        
+        alert(`Alquiler terminado correctamente.\nCosto total: $${costoFinal.toLocaleString('es-CO')}`);
+      }
+    } catch (error) {
+      console.error('Error terminando alquiler de mesa:', error);
+      alert('Error al terminar el alquiler. Inténtalo de nuevo.');
+    }
+  };
+
+  // Función para ocultar el resumen de mesa
+  window.ocultarResumenMesa = function(btn) {
+    const mesaDiv = btn.closest('.mesa-alquilada');
+    if (mesaDiv) {
+      mesaDiv.classList.add('hidden');
+    }
+  };
+
+  // Limpiar intervalos al cerrar/recargar la página
+  window.addEventListener('beforeunload', function() {
+    document.querySelectorAll('.border.rounded.shadow').forEach(acordeon => {
+      if (acordeon.intervalMesa) {
+        clearInterval(acordeon.intervalMesa);
+      }
+    });
+  });
+
+  // Restaurar contadores de mesa activos al cargar la página
+  window.addEventListener('DOMContentLoaded', function() {
+    setTimeout(() => {
+      document.querySelectorAll('.border.rounded.shadow').forEach(acordeon => {
+        try {
+          const mesaData = JSON.parse(acordeon.dataset.mesaAlquilada || '{}');
+          if (mesaData.activa) {
+            iniciarContadorMesa(acordeon);
+          }
+        } catch (error) {
+          // Ignorar errores de parsing
+        }
+      });
+    }, 500);
+  });
+
+  // Función para pago completo de todas las rondas
+  window.pagoCompletoTotal = function(btn) {
+    const acordeon = btn.closest('.border.rounded.shadow');
+    if (!acordeon) return;
+    
+    let rondas = [];
+    try {
+      rondas = JSON.parse(acordeon.dataset.rondas || '[]');
+    } catch {
+      rondas = [];
+    }
+    
+    if (!Array.isArray(rondas) || rondas.length === 0) {
+      alert('No hay rondas para pagar.');
+      return;
+    }
+    
+    // Calcular saldo total de todas las rondas
+    let saldoTotal = 0;
+    const rondasConSaldo = [];
+    
+    rondas.forEach((ronda, idx) => {
+      const pagos = ronda.pagos || [];
+      const totalPagado = pagos.reduce((sum, pago) => sum + pago.monto, 0);
+      const saldoRonda = ronda.total - totalPagado;
+      
+      if (saldoRonda > 0) {
+        saldoTotal += saldoRonda;
+        rondasConSaldo.push({
+          indice: idx,
+          nombre: `Ronda ${idx + 1}`,
+          total: ronda.total,
+          pagado: totalPagado,
+          saldo: saldoRonda
+        });
+      }
+    });
+    
+    if (saldoTotal <= 0) {
+      alert('No hay saldo pendiente para pagar.');
+      return;
+    }
+    
+    // Confirmar el pago
+    let mensaje = `💰 PAGO COMPLETO DE TODAS LAS RONDAS\n\n`;
+    mensaje += `Rondas con saldo pendiente:\n`;
+    rondasConSaldo.forEach(r => {
+      mensaje += `• ${r.nombre}: $${r.saldo.toLocaleString('es-CO')}\n`;
+    });
+    mensaje += `\n💳 TOTAL A PAGAR: $${saldoTotal.toLocaleString('es-CO')}\n\n`;
+    mensaje += `¿Confirmas realizar el pago completo?`;
+    
+    if (confirm(mensaje)) {
+      // Mostrar modal de método de pago para el total
+      mostrarModalMetodoPagoTotal(acordeon, saldoTotal, rondasConSaldo);
+    }
+  };
+
+  // Modal y función para método de pago total
+  function mostrarModalMetodoPagoTotal(acordeon, montoTotal, rondasConSaldo) {
+    // Crear modal si no existe
+    let modal = document.getElementById('modalMetodoPagoTotal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'modalMetodoPagoTotal';
+      modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center hidden z-50';
+      modal.innerHTML = `
+        <div class="bg-white rounded-lg shadow-lg max-w-md w-full mx-4">
+          <div class="p-6">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-lg font-semibold">💰 Pago Completo</h3>
+              <button type="button" onclick="cerrarModalMetodoPagoTotal()" class="text-gray-400 hover:text-gray-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
+            </div>
+            <div class="mb-4">
+              <div class="text-center mb-4">
+                <div class="text-2xl font-bold text-green-600" id="montoTotalPago"></div>
+                <div class="text-sm text-gray-600">Total a pagar</div>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <button type="button" class="metodo-btn bg-green-100 hover:bg-green-200 border-2 border-green-300 rounded-lg p-4 text-center transition-colors" data-metodo="Efectivo">
+                <div class="text-2xl mb-2">💵</div>
+                <div class="font-semibold">Efectivo</div>
+              </button>
+              <button type="button" class="metodo-btn bg-purple-100 hover:bg-purple-200 border-2 border-purple-300 rounded-lg p-4 text-center transition-colors" data-metodo="Nequi">
+                <div class="text-2xl mb-2">📱</div>
+                <div class="font-semibold">Nequi</div>
+              </button>
+              <button type="button" class="metodo-btn bg-orange-100 hover:bg-orange-200 border-2 border-orange-300 rounded-lg p-4 text-center transition-colors" data-metodo="Daviplata">
+                <div class="text-2xl mb-2">🏦</div>
+                <div class="font-semibold">Daviplata</div>
+              </button>
+              <button type="button" class="metodo-btn bg-blue-100 hover:bg-blue-200 border-2 border-blue-300 rounded-lg p-4 text-center transition-colors" data-metodo="Transferencia">
+                <div class="text-2xl mb-2">🔄</div>
+                <div class="font-semibold">Transferencia</div>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      
+      // Event listeners para los botones de método
+      modal.querySelectorAll('.metodo-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const metodo = this.dataset.metodo;
+          procesarPagoCompletoTotal(metodo);
+        });
+      });
+    }
+    
+    // Actualizar monto y mostrar modal
+    document.getElementById('montoTotalPago').textContent = '$' + montoTotal.toLocaleString('es-CO');
+    
+    // Guardar datos temporales
+    window.datosPagoTotal = {
+      acordeon: acordeon,
+      monto: montoTotal,
+      rondas: rondasConSaldo
+    };
+    
+    modal.classList.remove('hidden');
+  }
+
+  // Función para cerrar modal de método de pago total
+  window.cerrarModalMetodoPagoTotal = function() {
+    const modal = document.getElementById('modalMetodoPagoTotal');
+    if (modal) {
+      modal.classList.add('hidden');
+    }
+    delete window.datosPagoTotal;
+  };
+
+  // Función para procesar el pago completo total
+  function procesarPagoCompletoTotal(metodo) {
+    const datos = window.datosPagoTotal;
+    if (!datos) return;
+    
+    const { acordeon, monto, rondas: rondasConSaldo } = datos;
+    const nombrePersona = prompt('¿Quién está realizando el pago completo?') || 'Anónimo';
+    
+    if (!nombrePersona) return;
+    
+    // Obtener rondas actuales
+    let rondas = [];
+    try {
+      rondas = JSON.parse(acordeon.dataset.rondas || '[]');
+    } catch {
+      rondas = [];
+    }
+    
+    // Pagar cada ronda completamente
+    const fechaPago = new Date().toLocaleDateString('es-CO');
+    let totalPagado = 0;
+    
+    rondasConSaldo.forEach(rondaInfo => {
+      const ronda = rondas[rondaInfo.indice];
+      if (!ronda) return;
+      
+      if (!ronda.pagos) ronda.pagos = [];
+      
+      // Agregar pago por el saldo restante
+      const pago = {
+        persona: nombrePersona,
+        monto: rondaInfo.saldo,
+        metodo: metodo,
+        fecha: fechaPago
+      };
+      
+      ronda.pagos.push(pago);
+      totalPagado += rondaInfo.saldo;
+    });
+    
+    // Cerrar modal primero
+    cerrarModalMetodoPagoTotal();
+    
+    // Obtener nombre del cliente antes de eliminar
+    const nombreCliente = acordeon.querySelector('.font-semibold').textContent.split('(')[0].trim();
+    
+    // Como se pagó todo, eliminar el acordeón completo
+    setTimeout(() => {
+      alert(`🎉 ¡PEDIDO COMPLETADO!\n\n💰 Total pagado: $${totalPagado.toLocaleString('es-CO')}\n👤 Pagado por: ${nombrePersona}\n💳 Método: ${metodo}\n📅 Fecha: ${fechaPago}\n\nTodas las rondas de ${nombreCliente} han sido pagadas.\nEl pedido será eliminado de la lista.`);
+      
+      // Eliminar todo el acordeón del DOM
+      acordeon.remove();
+    }, 100);
+  }
+
+  // Función para pagar una ronda completa específica
+  window.pagarRondaCompleta = function(acordeonId, rondaIdx) {
+    const acordeon = document.getElementById(acordeonId);
+    if (!acordeon) return;
+    
+    let rondas = [];
+    try {
+      rondas = JSON.parse(acordeon.dataset.rondas || '[]');
+    } catch {
+      rondas = [];
+    }
+    
+    if (!Array.isArray(rondas) || !rondas[rondaIdx]) {
+      alert('Ronda no encontrada.');
+      return;
+    }
+    
+    const ronda = rondas[rondaIdx];
+    const pagos = ronda.pagos || [];
+    const totalPagado = pagos.reduce((sum, pago) => sum + pago.monto, 0);
+    const saldoPendiente = ronda.total - totalPagado;
+    
+    if (saldoPendiente <= 0) {
+      alert('Esta ronda ya está completamente pagada.');
+      return;
+    }
+    
+    // Confirmar el pago de la ronda
+    const mensaje = `💳 PAGO COMPLETO DE RONDA ${rondaIdx + 1}\n\n` +
+                   `Total de la ronda: $${ronda.total.toLocaleString('es-CO')}\n` +
+                   `Ya pagado: $${totalPagado.toLocaleString('es-CO')}\n` +
+                   `Saldo pendiente: $${saldoPendiente.toLocaleString('es-CO')}\n\n` +
+                   `¿Confirmas pagar el saldo restante de la ronda ${rondaIdx + 1}?`;
+    
+    if (confirm(mensaje)) {
+      // Mostrar modal de método de pago para la ronda
+      mostrarModalMetodoPagoRonda(acordeon, rondaIdx, saldoPendiente);
+    }
+  };
+
+  // Modal y función para método de pago de ronda específica
+  function mostrarModalMetodoPagoRonda(acordeon, rondaIdx, monto) {
+    // Crear modal si no existe
+    let modal = document.getElementById('modalMetodoPagoRonda');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'modalMetodoPagoRonda';
+      modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center hidden z-50';
+      modal.innerHTML = `
+        <div class="bg-white rounded-lg shadow-lg max-w-md w-full mx-4">
+          <div class="p-6">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-lg font-semibold">💳 Pago de Ronda</h3>
+              <button type="button" onclick="cerrarModalMetodoPagoRonda()" class="text-gray-400 hover:text-gray-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
+            </div>
+            <div class="mb-4">
+              <div class="text-center mb-4">
+                <div class="text-xl font-bold text-blue-600" id="rondaNumero"></div>
+                <div class="text-2xl font-bold text-green-600" id="montoRondaPago"></div>
+                <div class="text-sm text-gray-600">Saldo a pagar</div>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <button type="button" class="metodo-ronda-btn bg-green-100 hover:bg-green-200 border-2 border-green-300 rounded-lg p-4 text-center transition-colors" data-metodo="Efectivo">
+                <div class="text-2xl mb-2">💵</div>
+                <div class="font-semibold">Efectivo</div>
+              </button>
+              <button type="button" class="metodo-ronda-btn bg-purple-100 hover:bg-purple-200 border-2 border-purple-300 rounded-lg p-4 text-center transition-colors" data-metodo="Nequi">
+                <div class="text-2xl mb-2">📱</div>
+                <div class="font-semibold">Nequi</div>
+              </button>
+              <button type="button" class="metodo-ronda-btn bg-orange-100 hover:bg-orange-200 border-2 border-orange-300 rounded-lg p-4 text-center transition-colors" data-metodo="Daviplata">
+                <div class="text-2xl mb-2">🏦</div>
+                <div class="font-semibold">Daviplata</div>
+              </button>
+              <button type="button" class="metodo-ronda-btn bg-blue-100 hover:bg-blue-200 border-2 border-blue-300 rounded-lg p-4 text-center transition-colors" data-metodo="Transferencia">
+                <div class="text-2xl mb-2">🔄</div>
+                <div class="font-semibold">Transferencia</div>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      
+      // Event listeners para los botones de método
+      modal.querySelectorAll('.metodo-ronda-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const metodo = this.dataset.metodo;
+          procesarPagoRonda(metodo);
+        });
+      });
+    }
+    
+    // Actualizar información y mostrar modal
+    document.getElementById('rondaNumero').textContent = `Ronda ${rondaIdx + 1}`;
+    document.getElementById('montoRondaPago').textContent = '$' + monto.toLocaleString('es-CO');
+    
+    // Guardar datos temporales
+    window.datosPagoRonda = {
+      acordeon: acordeon,
+      rondaIdx: rondaIdx,
+      monto: monto
+    };
+    
+    modal.classList.remove('hidden');
+  }
+
+  // Función para cerrar modal de método de pago de ronda
+  window.cerrarModalMetodoPagoRonda = function() {
+    const modal = document.getElementById('modalMetodoPagoRonda');
+    if (modal) {
+      modal.classList.add('hidden');
+    }
+    delete window.datosPagoRonda;
+  };
+
+  // Función para procesar el pago de ronda completa
+  function procesarPagoRonda(metodo) {
+    const datos = window.datosPagoRonda;
+    if (!datos) return;
+    
+    const { acordeon, rondaIdx, monto } = datos;
+    const nombrePersona = prompt(`¿Quién está pagando la ronda ${rondaIdx + 1}?`) || 'Anónimo';
+    
+    if (!nombrePersona) return;
+    
+    // Obtener rondas actuales
+    let rondas = [];
+    try {
+      rondas = JSON.parse(acordeon.dataset.rondas || '[]');
+    } catch {
+      rondas = [];
+    }
+    
+    const ronda = rondas[rondaIdx];
+    if (!ronda) return;
+    
+    // Guardar información de la ronda antes de eliminarla
+    const totalRonda = ronda.total;
+    const numeroRonda = rondaIdx + 1;
+    
+    // ELIMINAR la ronda del array (ya está pagada completamente)
+    rondas.splice(rondaIdx, 1);
+    
+    // Actualizar dataset con la ronda eliminada
+    acordeon.dataset.rondas = JSON.stringify(rondas);
+    
+    // Cerrar modal
+    cerrarModalMetodoPagoRonda();
+    
+    // Verificar si ya no quedan rondas ANTES de renderizar
+    if (rondas.length === 0) {
+      // Si no quedan rondas, eliminar todo el pedido
+      const nombreCliente = acordeon.querySelector('.font-semibold').textContent.split('(')[0].trim();
+      
+      // Mostrar mensaje de finalización antes de eliminar
+      setTimeout(() => {
+        alert(`🎉 ¡PEDIDO COMPLETADO!\n\nTodas las rondas de ${nombreCliente} han sido pagadas.\n\nEl pedido será eliminado de la lista.`);
+        
+        // Eliminar todo el acordeón del DOM
+        acordeon.remove();
+      }, 100);
+      
+      return; // Salir de la función sin renderizar
+    }
+    
+    // Renderizar de nuevo (esto actualizará automáticamente los totales globales)
+    renderizarRondas(acordeon);
+    
+    // Mensaje de confirmación
+    alert(`✅ Ronda ${numeroRonda} pagada y eliminada\n\n💰 Monto pagado: $${monto.toLocaleString('es-CO')}\n👤 Pagado por: ${nombrePersona}\n💳 Método: ${metodo}\n📅 Fecha: ${new Date().toLocaleDateString('es-CO')}\n\n🗑️ La ronda ha sido eliminada del pedido.\nRondas restantes: ${rondas.length}`);
+  }
+
   </script>
 </body>
 </html>
