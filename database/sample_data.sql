@@ -66,9 +66,9 @@ INSERT INTO productos (codigo, nombre, categoria_id, precio_venta, precio_costo,
 ('BURG003', 'Hamburguesa de Pollo', 3, 14000, 7000, 0, 0, 'unidad'),
 ('BURG004', 'Hamburguesa Vegetariana', 3, 13000, 6500, 0, 0, 'unidad'),
 
-('HOT001', 'Perro Sencillo', 3, 8000, 4000, 0, 0, 'unidad'),
-('HOT002', 'Perro Especial', 3, 12000, 6000, 0, 0, 'unidad'),
-('HOT003', 'Choripan', 3, 10000, 5000, 0, 0, 'unidad'),
+('HOTD001', 'Perro Sencillo', 3, 8000, 4000, 0, 0, 'unidad'),
+('HOTD002', 'Perro Especial', 3, 12000, 6000, 0, 0, 'unidad'),
+('HOTD003', 'Choripan', 3, 10000, 5000, 0, 0, 'unidad'),
 
 ('SAND001', 'Sandwich Mixto', 3, 9000, 4500, 0, 0, 'unidad'),
 ('SAND002', 'Sandwich de Pollo', 3, 11000, 5500, 0, 0, 'unidad');
