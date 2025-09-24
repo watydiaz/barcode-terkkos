@@ -3,22 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Barcode Terkkos - Menú Principal</title>
+    <title>Terkko's Billiard's Club - Menú Principal</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: #FFF200;
+        }
+        header, footer, .main-header {
+            background: #FFF200 !important;
+            color: #fff !important;
+        }
+        .main-header h1, .main-header p, footer, footer p, footer a, footer span {
+            color: #fff !important;
+        }
+        .main-content {
+            background: #fff;
+            border-radius: 18px;
+            box-shadow: 0 0 24px 0 #2222;
+            padding: 2rem;
+        }
+        .btn-billar {
+            background: #222222;
+            color: #FFF200;
+            font-weight: bold;
+            border-radius: 8px;
+            transition: background 0.2s, color 0.2s;
+        }
+        .btn-billar:hover {
+            background: #FFF200;
+            color: #222222;
+            border: 2px solid #222222;
+        }
+    </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
     <div class="container mx-auto px-4 py-8">
         <!-- Header -->
-        <div class="text-center mb-12">
-            <h1 class="text-5xl font-bold text-gray-800 mb-4">🍽️ Barcode Terkkos</h1>
-            <p class="text-xl text-gray-600">Sistema de Gestión de Restaurante</p>
+        <div class="main-header text-center mb-12 flex flex-col items-center justify-center" style="background:#FFF200;border-radius:18px;padding:2rem 0;box-shadow:0 0 24px #2222;">
+            <img src="https://billar.diaztecnologia.com/img/logo.jpg" alt="Logo Terkko's Billiard's Club" style="height:80px;width:80px;border-radius:12px;background:#FFF200;object-fit:cover;box-shadow:0 2px 8px #2222;">
+            <h1 class="text-5xl font-bold mb-4" style="color:#fff;">Terkko's Billiard's Club</h1>
+            <p class="text-xl" style="color:#fff;">Sistema de Gestión de Restaurante</p>
         </div>
 
         <!-- Menú Principal -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
             
             <!-- Sistema Principal -->
-            <div class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
+            <div class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow main-content">
                 <div class="text-4xl mb-4">📱</div>
                 <h2 class="text-xl font-bold mb-2">Sistema Principal</h2>
                 <p class="text-gray-600 mb-4">Aplicación completa con escáner de códigos de barras, gestión de pedidos y rondas.</p>
@@ -28,7 +59,7 @@
             </div>
 
             <!-- Consulta Base de Datos -->
-            <div class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
+            <div class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow main-content">
                 <div class="text-4xl mb-4">🔍</div>
                 <h2 class="text-xl font-bold mb-2">Consulta Base de Datos</h2>
                 <p class="text-gray-600 mb-4">Consulta directa a MySQL para ver pedidos pendientes y estadísticas en tiempo real.</p>
@@ -38,7 +69,7 @@
             </div>
 
             <!-- Test de Conexión -->
-            <div class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
+            <div class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow main-content">
                 <div class="text-4xl mb-4">🔧</div>
                 <h2 class="text-xl font-bold mb-2">Test de Conexión</h2>
                 <p class="text-gray-600 mb-4">Verifica la conexión a la base de datos y muestra información del servidor.</p>
@@ -48,7 +79,7 @@
             </div>
 
             <!-- API Endpoint -->
-            <div class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
+            <div class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow main-content">
                 <div class="text-4xl mb-4">🔌</div>
                 <h2 class="text-xl font-bold mb-2">API Endpoint</h2>
                 <p class="text-gray-600 mb-4">Acceso directo al endpoint JSON de pedidos pendientes para integraciones.</p>
@@ -58,7 +89,7 @@
             </div>
 
             <!-- Sistema Original -->
-            <div class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
+            <div class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow main-content">
                 <div class="text-4xl mb-4">📜</div>
                 <h2 class="text-xl font-bold mb-2">Sistema Original</h2>
                 <p class="text-gray-600 mb-4">Versión original del escáner de códigos de barras (backup de la versión anterior).</p>
@@ -68,7 +99,7 @@
             </div>
 
             <!-- Test Rápido -->
-            <div class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
+            <div class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow main-content">
                 <div class="text-4xl mb-4">🧪</div>
                 <h2 class="text-xl font-bold mb-2">Test Rápido</h2>
                 <p class="text-gray-600 mb-4">Pruebas rápidas de funcionalidad y diagnóstico de errores.</p>
@@ -85,7 +116,7 @@
         </div>
 
         <!-- Información adicional -->
-        <div class="mt-12 bg-blue-50 border border-blue-200 rounded-lg p-6 max-w-4xl mx-auto">
+    <div class="mt-12 bg-white border border-yellow-300 rounded-lg p-6 max-w-4xl mx-auto main-content" style="box-shadow:0 0 24px #2222;">
             <h3 class="font-bold text-blue-800 mb-4">ℹ️ Información del Sistema</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-blue-700">
                 <div>
@@ -116,5 +147,10 @@
             }, 3000);
         </script> -->
     </div>
+    <footer class="text-center py-6 mt-12" style="background:#FFF200;color:#fff;border-radius:18px;box-shadow:0 0 24px #2222;">
+        <p class="font-bold">Terkko's Billiard's Club</p>
+        <p class="text-sm">Sistema de Gestión de Restaurante</p>
+        <p class="text-xs mt-1">&copy; 2025 Terkko's Billiard's Club</p>
+    </footer>
 </body>
 </html>
