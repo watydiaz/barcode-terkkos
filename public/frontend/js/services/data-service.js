@@ -1,3 +1,4 @@
+// ...existing code...
 // ================================================================
 // DATA-SERVICE.JS - Servicio de datos
 // Maneja toda la comunicación con el backend/localStorage
@@ -6,6 +7,46 @@
 import { Utils } from '../utils/utils.js';
 
 export class DataService {
+  // ================================================================
+  // GESTIÓN DE PAGOS
+  // ================================================================
+  async savePago(pago) {
+    // Aquí puedes implementar la lógica para guardar pagos en localStorage o API
+    if (this.useLocalStorage) {
+      let pagos = JSON.parse(localStorage.getItem('barcode_terkkos_pagos') || '[]');
+      pagos.push(pago);
+      localStorage.setItem('barcode_terkkos_pagos', JSON.stringify(pagos));
+      return pago;
+    } else {
+      // TODO: Implementar endpoint real en backend
+      const response = await fetch(`${this.baseUrl}/pagos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(pago)
+      });
+      return await response.json();
+    }
+  }
+
+  // ================================================================
+  // MÉTODOS DE PAGO
+  // ================================================================
+  async getMetodosPago() {
+    const config = await this.getConfiguracion();
+    return config.metodos_pago_activos || [];
+  }
+
+  // ================================================================
+  // CONFIGURACIÓN DE MESAS
+  // ================================================================
+  async getConfiguracionMesas() {
+    const config = await this.getConfiguracion();
+    // Puedes personalizar esto según tu estructura de configuración
+    return {
+      precio_mesa_hora: config.precio_mesa_hora,
+      redondear_tiempo_mesa: config.redondear_tiempo_mesa
+    };
+  }
   constructor() {
     this.baseUrl = '/api'; // Para el futuro backend API
     this.useLocalStorage = true; // Por ahora usar localStorage, luego cambiar a false
